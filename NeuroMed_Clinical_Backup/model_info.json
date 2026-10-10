@@ -1,0 +1,40 @@
+{
+  "model_name": "Logistic Regression",
+  "chosen_feature_set": "B_symptom",
+  "final_features": [
+    "Headache_Persistent",
+    "Nausea_Vomiting",
+    "Vision_Changes",
+    "Seizures",
+    "Balance_Coordination_Issues",
+    "Speech_Difficulties",
+    "Memory_Loss",
+    "Weakness_Numbness",
+    "Personality_Changes",
+    "Fatigue",
+    "Sensitivity_Light",
+    "Sleep_Disturbances"
+  ],
+  "calibration_method": "isotonic",
+  "decision_threshold": 0.4088944723618091,
+  "target_sensitivity": 0.9,
+  "cv_roc_auc": 0.9264591922066934,
+  "cv_f1": 0.8624329027395788,
+  "test_accuracy": 0.8387638875921949,
+  "test_precision": 0.8282978617849879,
+  "test_recall": 0.9066029539530843,
+  "test_specificity": 0.747685353940366,
+  "test_f1": 0.865683249941669,
+  "test_roc_auc": 0.9267312120133261,
+  "test_mcc": 0.6693103493614563,
+  "test_brier_score": 0.1052805103489409,
+  "dataset_rows_raw": 217585,
+  "dataset_rows_clean": 214218,
+  "limitations": [
+    "Dataset appears synthetic: 12 symptom columns give ~0.92 ROC-AUC, which is the performance ceiling.",
+    "57% tumor prevalence is far above real-world rates (~1-5%). Probabilities do not show real-world risk.",
+    "BP, Chronic_Illness, and Diabetes have AUC ~0.50 \u2014 no predictive value in this dataset.",
+    "Not a diagnostic tool. For informational and research purposes only.",
+    "Model trained where 57% rows had a tumor \u2014 probabilities do not represent real-world risk."
+  ]
+}

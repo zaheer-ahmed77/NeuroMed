@@ -1,0 +1,24 @@
+/* App.css — kept minimal; most styles are in Dashboard.css, Pages.css, or inline.
+   Only landing page nav + layout base here. */
+
+/* ══ Reset any lingering legacy vars ══ */
+:root {
+  --color-pink: #1E40AF;    /* Mapped to new primary for any old references */
+  --color-light: #94A3B8;
+  --color-blue: #0C1628;
+  --color-dark-blue: #060D1B;
+  --color-white: #ffffff;
+
+  /* Legacy vars mapped to new system */
+  --bg-main: var(--bg-base);
+  --bg-panel: var(--bg-surface-2);
+  --bg-panel-hover: var(--bg-hover);
+  --bg-glass: var(--bg-glass-light);
+  --bg-glass-heavy: rgba(12, 22, 40, 0.96);
+  --text-main: var(--text-primary);
+  --text-muted: var(--text-secondary);
+  --text-sub: var(--text-secondary);
+  --border-color: var(--border);
+  --border-color-light: var(--border);
+  --border-pink: var(--border-primary);
+}

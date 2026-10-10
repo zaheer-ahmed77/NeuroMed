@@ -1,0 +1,542 @@
+[
+    {
+        "name": "Assoc. Prof. Dr. Inam E Khuda",
+        "specialty": "Neurologist",
+        "city": "Karachi",
+        "latitude": 24.8607,
+        "longitude": 67.0011,
+        "fee": 4000,
+        "is_verified": true
+    },
+    {
+        "name": "Dr. Teerath Das Khatri",
+        "specialty": "Neurologist",
+        "city": "Karachi",
+        "latitude": 24.8607,
+        "longitude": 67.0011,
+        "fee": 6000,
+        "is_verified": true
+    },
+    {
+        "name": "Dr. Samreen Mahmood",
+        "specialty": "Neurologist",
+        "city": "Karachi",
+        "latitude": 24.8607,
+        "longitude": 67.0011,
+        "fee": 3000,
+        "is_verified": true
+    },
+    {
+        "name": "Dr. Asma Niaz",
+        "specialty": "Neurologist",
+        "city": "Karachi",
+        "latitude": 24.8607,
+        "longitude": 67.0011,
+        "fee": 2700,
+        "is_verified": true
+    },
+    {
+        "name": "Dr. Muhammad Nawaz",
+        "specialty": "Neurologist",
+        "city": "Karachi",
+        "latitude": 24.8607,
+        "longitude": 67.0011,
+        "fee": 1500,
+        "is_verified": true
+    },
+    {
+        "name": "Dr. Dileep Kumar",
+        "specialty": "Neurologist",
+        "city": "Karachi",
+        "latitude": 24.8607,
+        "longitude": 67.0011,
+        "fee": 2000,
+        "is_verified": true
+    },
+    {
+        "name": "Dr. Sana Ghous",
+        "specialty": "Neurologist",
+        "city": "Karachi",
+        "latitude": 24.8607,
+        "longitude": 67.0011,
+        "fee": 2000,
+        "is_verified": true
+    },
+    {
+        "name": "Dr. Shahnaz Shah",
+        "specialty": "Neurologist",
+        "city": "Karachi",
+        "latitude": 24.8607,
+        "longitude": 67.0011,
+        "fee": 2900,
+        "is_verified": true
+    },
+    {
+        "name": "Dr. Humera Khalid",
+        "specialty": "Neurologist",
+        "city": "Karachi",
+        "latitude": 24.8607,
+        "longitude": 67.0011,
+        "fee": 2500,
+        "is_verified": true
+    },
+    {
+        "name": "Dr. Shakil Ahmad",
+        "specialty": "Neurologist",
+        "city": "Karachi",
+        "latitude": 24.8607,
+        "longitude": 67.0011,
+        "fee": 2000,
+        "is_verified": true
+    },
+    {
+        "name": "Assist. Prof. Dr. Sajid Hussain Seelro",
+        "specialty": "Neurologist",
+        "city": "Hyderabad",
+        "latitude": 25.396,
+        "longitude": 68.3578,
+        "fee": 1500,
+        "is_verified": true
+    },
+    {
+        "name": "Dr. Waleed Arshad",
+        "specialty": "Neurologist",
+        "city": "Hyderabad",
+        "latitude": 25.396,
+        "longitude": 68.3578,
+        "fee": 1500,
+        "is_verified": true
+    },
+    {
+        "name": "Dr. Samahir Akram Nizamani",
+        "specialty": "Neurologist",
+        "city": "Hyderabad",
+        "latitude": 25.396,
+        "longitude": 68.3578,
+        "fee": 1500,
+        "is_verified": true
+    },
+    {
+        "name": "Dr. Waqas Arshad",
+        "specialty": "Neurologist",
+        "city": "Hyderabad",
+        "latitude": 25.396,
+        "longitude": 68.3578,
+        "fee": 4000,
+        "is_verified": true
+    },
+    {
+        "name": "Dr. Anwar Muhammad Qureshi",
+        "specialty": "Neurologist",
+        "city": "Hyderabad",
+        "latitude": 25.396,
+        "longitude": 68.3578,
+        "fee": 1500,
+        "is_verified": true
+    },
+    {
+        "name": "Dr. Adeeqa Aman",
+        "specialty": "Neurologist",
+        "city": "Hyderabad",
+        "latitude": 25.396,
+        "longitude": 68.3578,
+        "fee": 1500,
+        "is_verified": true
+    },
+    {
+        "name": "Dr. Masood Uz Zaman",
+        "specialty": "Neurologist",
+        "city": "Hyderabad",
+        "latitude": 25.396,
+        "longitude": 68.3578,
+        "fee": 1500,
+        "is_verified": true
+    },
+    {
+        "name": "Dr. Ali Hasan",
+        "specialty": "Neurologist",
+        "city": "Hyderabad",
+        "latitude": 25.396,
+        "longitude": 68.3578,
+        "fee": 1500,
+        "is_verified": true
+    },
+    {
+        "name": "Dr. Bhojo Jillani",
+        "specialty": "Neurologist",
+        "city": "Hyderabad",
+        "latitude": 25.396,
+        "longitude": 68.3578,
+        "fee": 1500,
+        "is_verified": true
+    },
+    {
+        "name": "Dr. Sohail Khanzada",
+        "specialty": "Neurologist",
+        "city": "Hyderabad",
+        "latitude": 25.396,
+        "longitude": 68.3578,
+        "fee": 1500,
+        "is_verified": true
+    },
+    {
+        "name": "Assoc. Prof. Faheem Saeed",
+        "specialty": "Neurologist",
+        "city": "Lahore",
+        "latitude": 31.5497,
+        "longitude": 74.3436,
+        "fee": 3000,
+        "is_verified": true
+    },
+    {
+        "name": "Dr. Maida Ayub",
+        "specialty": "Neurologist",
+        "city": "Lahore",
+        "latitude": 31.5497,
+        "longitude": 74.3436,
+        "fee": 2000,
+        "is_verified": true
+    },
+    {
+        "name": "Assoc. Prof. Dr. Shahid Mukhtar",
+        "specialty": "Neurologist",
+        "city": "Lahore",
+        "latitude": 31.5497,
+        "longitude": 74.3436,
+        "fee": 2500,
+        "is_verified": true
+    },
+    {
+        "name": "Dr. Hashir Amin Malik",
+        "specialty": "Neurologist",
+        "city": "Lahore",
+        "latitude": 31.5497,
+        "longitude": 74.3436,
+        "fee": 2500,
+        "is_verified": true
+    },
+    {
+        "name": "Assist. Prof. Dr. Muhammad Ahmar",
+        "specialty": "Neurologist",
+        "city": "Lahore",
+        "latitude": 31.5497,
+        "longitude": 74.3436,
+        "fee": 2000,
+        "is_verified": true
+    },
+    {
+        "name": "Dr. Muhammad Arslan Tayyab",
+        "specialty": "Neurologist",
+        "city": "Lahore",
+        "latitude": 31.5497,
+        "longitude": 74.3436,
+        "fee": 1500,
+        "is_verified": true
+    },
+    {
+        "name": "Dr. Sana Farooq",
+        "specialty": "Neurologist",
+        "city": "Lahore",
+        "latitude": 31.5497,
+        "longitude": 74.3436,
+        "fee": 3000,
+        "is_verified": true
+    },
+    {
+        "name": "Assist. Prof. Dr. Madiha Malik",
+        "specialty": "Neurologist",
+        "city": "Lahore",
+        "latitude": 31.5497,
+        "longitude": 74.3436,
+        "fee": 3000,
+        "is_verified": true
+    },
+    {
+        "name": "Dr. Muhammad Wajahat Gohar Qureshi",
+        "specialty": "Neurologist",
+        "city": "Lahore",
+        "latitude": 31.5497,
+        "longitude": 74.3436,
+        "fee": 4000,
+        "is_verified": true
+    },
+    {
+        "name": "Dr. Ammar Yasir Chohan",
+        "specialty": "Neurologist",
+        "city": "Lahore",
+        "latitude": 31.5497,
+        "longitude": 74.3436,
+        "fee": 2000,
+        "is_verified": true
+    },
+    {
+        "name": "Dr. Naveed Javed",
+        "specialty": "Neurologist",
+        "city": "Islamabad",
+        "latitude": 33.6844,
+        "longitude": 73.0479,
+        "fee": 7000,
+        "is_verified": true
+    },
+    {
+        "name": "Dr. Amir Zia",
+        "specialty": "Neurologist",
+        "city": "Islamabad",
+        "latitude": 33.6844,
+        "longitude": 73.0479,
+        "fee": 4000,
+        "is_verified": true
+    },
+    {
+        "name": "Dr. Anwar Muhammad Qureshi",
+        "specialty": "Neurologist",
+        "city": "Islamabad",
+        "latitude": 33.6844,
+        "longitude": 73.0479,
+        "fee": 1500,
+        "is_verified": true
+    },
+    {
+        "name": "Dr. Faridullah Shah",
+        "specialty": "Neurologist",
+        "city": "Islamabad",
+        "latitude": 33.6844,
+        "longitude": 73.0479,
+        "fee": 2500,
+        "is_verified": true
+    },
+    {
+        "name": "Dr. Waleed Shahzad",
+        "specialty": "Neurologist",
+        "city": "Islamabad",
+        "latitude": 33.6844,
+        "longitude": 73.0479,
+        "fee": 3000,
+        "is_verified": true
+    },
+    {
+        "name": "Col. (R) Dr. Zahid Rustam",
+        "specialty": "Neurologist",
+        "city": "Islamabad",
+        "latitude": 33.6844,
+        "longitude": 73.0479,
+        "fee": 3500,
+        "is_verified": true
+    },
+    {
+        "name": "Dr. Muhammad Babar Khan",
+        "specialty": "Neurologist",
+        "city": "Islamabad",
+        "latitude": 33.6844,
+        "longitude": 73.0479,
+        "fee": 2500,
+        "is_verified": true
+    },
+    {
+        "name": "Dr. Ehsan Ur Rehman",
+        "specialty": "Neurologist",
+        "city": "Islamabad",
+        "latitude": 33.6844,
+        "longitude": 73.0479,
+        "fee": 2500,
+        "is_verified": true
+    },
+    {
+        "name": "Prof. Dr. Rao Suhail Yasin Khan",
+        "specialty": "Neurologist",
+        "city": "Islamabad",
+        "latitude": 33.6844,
+        "longitude": 73.0479,
+        "fee": 3000,
+        "is_verified": true
+    },
+    {
+        "name": "Dr. Anum Irfan Abbasi",
+        "specialty": "Neurologist",
+        "city": "Islamabad",
+        "latitude": 33.6844,
+        "longitude": 73.0479,
+        "fee": 2500,
+        "is_verified": true
+    },
+    {
+        "name": "Dr. Waqas Arshad",
+        "specialty": "Neurologist",
+        "city": "Quetta",
+        "latitude": 30.1798,
+        "longitude": 66.975,
+        "fee": 4000,
+        "is_verified": true
+    },
+    {
+        "name": "Dr. Ahmed Wali",
+        "specialty": "Neurologist",
+        "city": "Quetta",
+        "latitude": 30.1798,
+        "longitude": 66.975,
+        "fee": 1500,
+        "is_verified": true
+    },
+    {
+        "name": "Dr. Rustam Khan",
+        "specialty": "Neurologist",
+        "city": "Quetta",
+        "latitude": 30.1798,
+        "longitude": 66.975,
+        "fee": 1500,
+        "is_verified": true
+    },
+    {
+        "name": "Assist. Prof. Dr. Ghulam Mustafa Wardag",
+        "specialty": "Neurologist",
+        "city": "Quetta",
+        "latitude": 30.1798,
+        "longitude": 66.975,
+        "fee": 1500,
+        "is_verified": true
+    },
+    {
+        "name": "Dr. Abdul Aleem Tareen",
+        "specialty": "Neurologist",
+        "city": "Quetta",
+        "latitude": 30.1798,
+        "longitude": 66.975,
+        "fee": 1500,
+        "is_verified": true
+    },
+    {
+        "name": "Dr. Abdul Bari Nasar",
+        "specialty": "Neurologist",
+        "city": "Quetta",
+        "latitude": 30.1798,
+        "longitude": 66.975,
+        "fee": 1500,
+        "is_verified": true
+    },
+    {
+        "name": "Assist. Prof. Dr. Wazir Akbar Khan",
+        "specialty": "Neurologist",
+        "city": "Quetta",
+        "latitude": 30.1798,
+        "longitude": 66.975,
+        "fee": 1500,
+        "is_verified": true
+    },
+    {
+        "name": "Dr. Naseeb Ullah Kakar",
+        "specialty": "Neurologist",
+        "city": "Quetta",
+        "latitude": 30.1798,
+        "longitude": 66.975,
+        "fee": 1500,
+        "is_verified": true
+    },
+    {
+        "name": "Dr. Nasrullah Langove",
+        "specialty": "Neurologist",
+        "city": "Quetta",
+        "latitude": 30.1798,
+        "longitude": 66.975,
+        "fee": 1500,
+        "is_verified": true
+    },
+    {
+        "name": "Dr. Abdul Samad Panezai",
+        "specialty": "Neurologist",
+        "city": "Quetta",
+        "latitude": 30.1798,
+        "longitude": 66.975,
+        "fee": 1500,
+        "is_verified": true
+    },
+    {
+        "name": "Assist. Prof. Dr. Fawad Jan",
+        "specialty": "Neurologist",
+        "city": "Peshawar",
+        "latitude": 34.0151,
+        "longitude": 71.5249,
+        "fee": 1500,
+        "is_verified": true
+    },
+    {
+        "name": "Assist. Prof. Dr. Danish Nabi",
+        "specialty": "Neurologist",
+        "city": "Peshawar",
+        "latitude": 34.0151,
+        "longitude": 71.5249,
+        "fee": 1500,
+        "is_verified": true
+    },
+    {
+        "name": "Dr. Waqas Arshad",
+        "specialty": "Neurologist",
+        "city": "Peshawar",
+        "latitude": 34.0151,
+        "longitude": 71.5249,
+        "fee": 4000,
+        "is_verified": true
+    },
+    {
+        "name": "Dr. Shahzada Khan",
+        "specialty": "Neurologist",
+        "city": "Peshawar",
+        "latitude": 34.0151,
+        "longitude": 71.5249,
+        "fee": 1500,
+        "is_verified": true
+    },
+    {
+        "name": "Dr. Shahid Iqbal",
+        "specialty": "Neurologist",
+        "city": "Peshawar",
+        "latitude": 34.0151,
+        "longitude": 71.5249,
+        "fee": 1500,
+        "is_verified": true
+    },
+    {
+        "name": "Dr. Sohail Khan",
+        "specialty": "Neurologist",
+        "city": "Peshawar",
+        "latitude": 34.0151,
+        "longitude": 71.5249,
+        "fee": 1500,
+        "is_verified": true
+    },
+    {
+        "name": "Assoc. Prof. Muhammad Idris Khan",
+        "specialty": "Neurologist",
+        "city": "Peshawar",
+        "latitude": 34.0151,
+        "longitude": 71.5249,
+        "fee": 1500,
+        "is_verified": true
+    },
+    {
+        "name": "Dr. Anwar Shah",
+        "specialty": "Neurologist",
+        "city": "Peshawar",
+        "latitude": 34.0151,
+        "longitude": 71.5249,
+        "fee": 1500,
+        "is_verified": true
+    },
+    {
+        "name": "Dr. Shaukat Hayat",
+        "specialty": "Neurologist",
+        "city": "Peshawar",
+        "latitude": 34.0151,
+        "longitude": 71.5249,
+        "fee": 1500,
+        "is_verified": true
+    },
+    {
+        "name": "Dr. Muhammad Fozan Khan",
+        "specialty": "Neurologist",
+        "city": "Peshawar",
+        "latitude": 34.0151,
+        "longitude": 71.5249,
+        "fee": 1500,
+        "is_verified": true
+    }
+]

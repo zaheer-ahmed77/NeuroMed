@@ -1,0 +1,12 @@
+{
+  "Brain_Tumor_Present": {
+    "0": "Low symptom-based risk",
+    "1": "High symptom-based risk"
+  },
+  "BP_Category": {
+    "0": "Normal",
+    "1": "Elevated",
+    "2": "Stage 1 Hypertension",
+    "3": "Stage 2 Hypertension"
+  }
+}
