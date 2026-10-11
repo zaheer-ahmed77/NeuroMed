@@ -620,43 +620,89 @@ a:hover {
 }
 
 /* ============================================================
-   RESPONSIVE HERO GRID (2x2)
+   RESPONSIVE HERO SECTION (Zoom-resilient 2-Column Showcase)
    ============================================================ */
-.hero-grid {
+.hero-container {
   display: grid !important;
   grid-template-columns: 1fr 1fr;
-  grid-template-rows: auto auto;
-  gap: 40px;
-  width: 100%;
-  max-width: 1440px;
-  padding: 0 32px;
-  margin: 0 auto;
   align-items: center;
+  gap: 48px;
+  width: 100%;
+  max-width: 1280px;
+  padding: 40px 32px;
+  margin: 0 auto;
+  position: relative;
   z-index: 2;
+  box-sizing: border-box;
 }
 
-@media (max-width: 1100px) {
-  .hero-grid {
-    grid-template-columns: 1fr;
-    grid-template-rows: auto;
-    padding-top: 40px;
+.hero-showcase-stage {
+  position: relative;
+  width: 100%;
+  max-width: 540px;
+  height: 520px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.3s ease;
+}
+
+@media (max-width: 1200px) {
+  .hero-container {
+    gap: 32px;
+    padding: 32px 24px;
   }
-  .hero-col-center, .hero-col-left, .hero-col-new, .hero-col-right {
-    justify-content: center !important;
+  .hero-showcase-stage {
+    transform: scale(0.92);
+    transform-origin: center right;
+  }
+}
+
+@media (max-width: 1024px) {
+  .hero-container {
+    grid-template-columns: 1fr;
+    padding-top: 60px;
+    gap: 48px;
+  }
+  .hero-col-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+  }
+  .hero-col-content p {
     text-align: center;
   }
   .hero-stats-row {
+    justify-content: center;
     flex-wrap: wrap;
     gap: 20px;
   }
   .stat-divider {
     display: none !important;
   }
+  .hero-showcase-stage {
+    transform: scale(0.9);
+    transform-origin: center;
+  }
 }
 
-@media (max-width: 600px) {
-  .hero-col-left, .hero-col-right, .hero-col-new {
-    transform: scale(0.85);
+@media (max-width: 640px) {
+  .hero-container {
+    padding: 24px 16px;
+  }
+  .hero-showcase-stage {
+    transform: scale(0.78);
+    transform-origin: center;
+    height: 440px;
+  }
+}
+
+@media (max-width: 440px) {
+  .hero-showcase-stage {
+    transform: scale(0.68);
+    height: 380px;
   }
 }
 

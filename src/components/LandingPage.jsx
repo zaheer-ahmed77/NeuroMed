@@ -301,12 +301,12 @@ function LandingPage({ onLogin, navigate }) {
         <div style={{ position: 'absolute', top: '10%', left: '-5%', width: 500, height: 500, background: 'radial-gradient(circle, rgba(59,130,246,0.12) 0%, transparent 70%)', borderRadius: '50%', pointerEvents: 'none' }} />
         <div style={{ position: 'absolute', bottom: '10%', right: '-5%', width: 500, height: 500, background: 'radial-gradient(circle, rgba(139,92,246,0.12) 0%, transparent 70%)', borderRadius: '50%', pointerEvents: 'none' }} />
 
-        <div className="hero-grid">
+        <div className="hero-container">
 
-          {/* ── GRID 1 (Top-Left): Text & CTAs ── */}
-          <div className="hero-col-center" style={{ position: 'relative', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+          {/* ── COLUMN 1: Headline, Content & CTAs ── */}
+          <div className="hero-col-content" style={{ position: 'relative' }}>
             {/* Decorative squiggle near headline */}
-            <div style={{ position: 'absolute', top: '-5%', right: '5%', opacity: 0.8, transform: 'rotate(-10deg)', zIndex: 1 }}>
+            <div style={{ position: 'absolute', top: '-15px', right: '15px', opacity: 0.8, transform: 'rotate(-10deg)', zIndex: 1 }}>
               <svg width="35" height="35" viewBox="0 0 40 40" fill="none">
                 <path d="M5 20 C10 5, 20 5, 25 20 S40 35, 45 20" stroke="#3B82F6" strokeWidth="3" strokeLinecap="round" fill="none" />
               </svg>
@@ -318,16 +318,16 @@ function LandingPage({ onLogin, navigate }) {
               </p>
             </div>
 
-            <h1 style={{ animation: 'lpFadeUp 0.7s ease 0.08s both' }}>
-              <span style={{ display: 'block', fontSize: 'clamp(2.5rem, 4vw, 4rem)', fontWeight: 900, letterSpacing: '-2px', color: '#111827', lineHeight: 1.05, marginBottom: 4 }}>
+            <h1 style={{ animation: 'lpFadeUp 0.7s ease 0.08s both', margin: 0 }}>
+              <span style={{ display: 'block', fontSize: 'clamp(2.5rem, 4.2vw, 4rem)', fontWeight: 900, letterSpacing: '-2px', color: '#111827', lineHeight: 1.05, marginBottom: 4 }}>
                 Detect, diagnose,
               </span>
-              <span style={{ display: 'block', fontSize: 'clamp(2.5rem, 4vw, 4rem)', fontWeight: 900, letterSpacing: '-2px', color: '#3B82F6', lineHeight: 1.05 }}>
+              <span style={{ display: 'block', fontSize: 'clamp(2.5rem, 4.2vw, 4rem)', fontWeight: 900, letterSpacing: '-2px', color: '#3B82F6', lineHeight: 1.05 }}>
                 and save lives.
               </span>
             </h1>
 
-            <p style={{ fontSize: '1.05rem', color: '#6B7280', lineHeight: 1.6, margin: '24px 0 32px 0', maxWidth: 480, animation: 'lpFadeUp 0.7s ease 0.16s both' }}>
+            <p style={{ fontSize: '1.05rem', color: '#6B7280', lineHeight: 1.6, margin: '24px 0 32px 0', maxWidth: 490, animation: 'lpFadeUp 0.7s ease 0.16s both' }}>
               Clinical Decision Support System (CDSS) for radiologists and physicians. Enhance diagnostic confidence with AI-powered MRI analysis and a seamless cross-consultation network.
             </p>
 
@@ -344,7 +344,7 @@ function LandingPage({ onLogin, navigate }) {
             </div>
 
             {/* Trust stats row */}
-            <div className="hero-stats-row" style={{ display: 'flex', alignItems: 'center', marginTop: 48, animation: 'lpFadeUp 0.7s ease 0.32s both' }}>
+            <div className="hero-stats-row" style={{ display: 'flex', alignItems: 'center', marginTop: 44, animation: 'lpFadeUp 0.7s ease 0.32s both' }}>
               {[['98.6%', 'Accuracy Rate', Crosshair], ['2.4s', 'Avg. Analysis Time', Zap], ['50+', 'Clinics Connected', Shield]].map(([val, lbl, Icon], idx, arr) => (
                 <React.Fragment key={lbl}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 12, textAlign: 'left' }}>
@@ -362,116 +362,86 @@ function LandingPage({ onLogin, navigate }) {
             </div>
           </div>
 
-          {/* ── GRID 2 (Top-Right): Diagnostic Visual (MRI) ── */}
-          <div className="hero-col-left" style={{ position: 'relative', display: 'flex', justifyContent: 'center' }}>
-            <div style={{ position: 'relative', width: '100%', maxWidth: 360, display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+          {/* ── COLUMN 2: Unified Diagnostic Centerpiece ── */}
+          <div className="hero-col-showcase" style={{ position: 'relative', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+            <div className="hero-showcase-stage">
 
-              {/* Reference-exact MRI tablet 3D style */}
+              {/* Glowing soft backdrop circle */}
               <div style={{
-                position: 'relative', width: 260, height: 320, background: '#0B1120', borderRadius: 24, boxShadow: '-15px 25px 40px rgba(15,23,42,0.25)',
-                transform: 'perspective(1000px) rotateY(15deg) rotateX(5deg) rotateZ(-2deg)',
+                position: 'absolute', width: 340, height: 340,
+                background: 'radial-gradient(circle, rgba(59,130,246,0.18) 0%, rgba(99,102,241,0.06) 60%, transparent 80%)',
+                borderRadius: '50%', zIndex: 0, pointerEvents: 'none'
+              }} />
+
+              {/* 3D MRI Diagnostic Tablet */}
+              <div style={{
+                position: 'relative', width: 250, height: 310, background: '#0B1120', borderRadius: 24,
+                boxShadow: '-15px 25px 40px rgba(15,23,42,0.25)',
+                transform: 'perspective(1000px) rotateY(12deg) rotateX(4deg) rotateZ(-2deg)',
                 display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden',
-                border: '4px solid #1E293B', borderLeft: '8px solid #334155'
+                border: '4px solid #1E293B', borderLeft: '8px solid #334155',
+                zIndex: 2, marginRight: 60
               }}>
-                <img src="/mri_hero_base.webp" alt="Brain MRI Scan" style={{ width: '120%', height: '120%', objectFit: 'cover', opacity: 0.85 }} />
+                <img src="/mri_hero_base.webp" alt="Brain MRI Scan" style={{ width: '120%', height: '120%', objectFit: 'cover', opacity: 0.88 }} />
+                
+                {/* Tumor Detection overlay badge */}
+                <div style={{
+                  position: 'absolute', top: '35%', right: '12%', background: 'rgba(15,23,42,0.95)',
+                  backdropFilter: 'blur(8px)', border: '1px solid rgba(255,255,255,0.08)',
+                  padding: '7px 12px', borderRadius: 12, display: 'flex', alignItems: 'center', gap: 7,
+                  boxShadow: '0 10px 25px rgba(0,0,0,0.3)'
+                }}>
+                  <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#EF4444', boxShadow: '0 0 10px #EF4444' }} />
+                  <span style={{ fontSize: '0.68rem', fontWeight: 700, color: '#F8FAFC', letterSpacing: '0.2px' }}>Tumor Detected</span>
+                </div>
               </div>
 
-              {/* Tumor Badge Overlay directly on image */}
-              <div className="floating-anim" style={{ position: 'absolute', top: '35%', right: '15%', background: 'rgba(15,23,42,0.95)', backdropFilter: 'blur(8px)', border: '1px solid rgba(255,255,255,0.05)', padding: '8px 14px', borderRadius: 12, display: 'flex', alignItems: 'center', gap: 8, boxShadow: '0 10px 25px rgba(0,0,0,0.2)' }}>
-                <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#EF4444', boxShadow: '0 0 10px #EF4444' }} />
-                <span style={{ fontSize: '0.7rem', fontWeight: 700, color: '#F8FAFC', letterSpacing: '0.2px' }}>Tumor Detected</span>
-              </div>
+              {/* 3D Doctor Character standing proudly beside MRI Tablet */}
+              <img 
+                src="/hero_doctor_exact.webp" 
+                alt="Clinical Doctor" 
+                style={{
+                  position: 'absolute',
+                  right: -10, bottom: 0,
+                  height: 440,
+                  objectFit: 'contain',
+                  zIndex: 3,
+                  pointerEvents: 'none',
+                  filter: 'drop-shadow(0 20px 30px rgba(0,0,0,0.18))'
+                }} 
+              />
 
-              {/* Floating SVG Brain (left side) */}
-              <div style={{ position: 'absolute', top: '40%', left: '-5%', background: '#fff', borderRadius: '35%', padding: 12, boxShadow: '0 10px 25px rgba(0,0,0,0.08)', animation: 'heroFloat 6s ease-in-out infinite 0.5s', zIndex: 4 }}>
-                <Brain size={24} color="#3B82F6" strokeWidth={1.5} />
-              </div>
-
-              {/* Connecting dashed line */}
-              <svg style={{ position: 'absolute', top: '0', left: '-15%', width: '150%', height: '100%', pointerEvents: 'none', zIndex: 1 }}>
-                <path d="M 40 140 Q 90 40 150 40" fill="none" stroke="#60A5FA" strokeWidth="1.5" strokeDasharray="4 4" />
-                <circle cx="150" cy="40" r="3" fill="#3B82F6" />
-                <circle cx="40" cy="140" r="3" fill="#3B82F6" />
-              </svg>
-
-              {/* Decorative Leaves (bottom left) */}
-              <div style={{ position: 'absolute', bottom: '-5%', left: '0%', opacity: 0.8, zIndex: 1 }}>
-                <svg width="60" height="60" viewBox="0 0 60 60" fill="none">
-                  <path d="M30 60C30 60 15 45 10 30C5 15 20 10 30 20C40 10 55 15 50 30C45 45 30 60 30 60Z" fill="#BFDBFE" />
-                  <path d="M30 60C30 60 25 50 20 40C15 30 25 25 30 30C35 25 45 30 40 40C35 50 30 60 30 60Z" fill="#93C5FD" />
-                </svg>
-              </div>
-
-              {/* Floating Cards around MRI */}
-              <div className="floating-anim-delayed" style={{ position: 'absolute', top: '-10%', left: '-15%', zIndex: 3 }}>
+              {/* Floating Badge 1: MRI Result (Top Left) */}
+              <div className="floating-anim" style={{ position: 'absolute', top: -10, left: -25, zIndex: 4 }}>
                 <HeroCardMRI />
               </div>
-              <div className="floating-anim-delayed-more" style={{ position: 'absolute', bottom: '-15%', right: '-5%', zIndex: 3 }}>
+
+              {/* Floating Badge 2: Analysis Speed (Bottom Left) */}
+              <div className="floating-anim-delayed" style={{ position: 'absolute', bottom: 10, left: -20, zIndex: 4 }}>
                 <HeroCardStats />
               </div>
-            </div>
-          </div>
 
-          {/* ── GRID 3 (Bottom-Left - NEW): Multimodal AI & Security ── */}
-          <div className="hero-col-new" style={{ position: 'relative', display: 'flex', justifyContent: 'center' }}>
-            <div style={{ position: 'relative', width: '100%', maxWidth: 360, display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-
-              {/* Floating backdrop for brain */}
-              <div style={{ position: 'absolute', width: 280, height: 280, background: 'radial-gradient(circle, rgba(99,102,241,0.15) 0%, transparent 70%)', borderRadius: '50%', zIndex: 0 }} />
-
-              <img src="/network_brain.webp" alt="AI Network" style={{ width: '90%', objectFit: 'contain', position: 'relative', zIndex: 1, animation: 'heroFloat 6s ease-in-out infinite 0.2s', filter: 'drop-shadow(0 15px 35px rgba(59,130,246,0.25))' }} />
-
-              {/* New Card 1: HIPAA Secure */}
-              <div className="floating-anim" style={{ position: 'absolute', top: '10%', left: '-10%', zIndex: 3, background: '#fff', borderRadius: 16, padding: '12px 16px', boxShadow: '0 10px 25px rgba(0,0,0,0.06)', display: 'flex', alignItems: 'center', gap: 10, width: 180 }}>
-                <div style={{ width: 32, height: 32, borderRadius: 10, background: '#ECFDF5', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              {/* Floating Badge 3: HIPAA Secure (Top Right) */}
+              <div className="floating-anim" style={{
+                position: 'absolute', top: 15, right: -15, zIndex: 5,
+                background: '#FFFFFF', borderRadius: 16, padding: '10px 14px',
+                boxShadow: '0 10px 25px rgba(0,0,0,0.08)', border: '1px solid rgba(0,0,0,0.05)',
+                display: 'flex', alignItems: 'center', gap: 9
+              }}>
+                <div style={{ width: 30, height: 30, borderRadius: 9, background: '#ECFDF5', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                   <Shield size={16} color="#059669" />
                 </div>
                 <div>
-                  <div style={{ fontSize: '0.75rem', fontWeight: 800, color: '#111827' }}>HIPAA Secure</div>
-                  <div style={{ fontSize: '0.65rem', color: '#6B7280' }}>End-to-end encrypted</div>
+                  <div style={{ fontSize: '0.72rem', fontWeight: 800, color: '#111827' }}>HIPAA Secure</div>
+                  <div style={{ fontSize: '0.62rem', color: '#6B7280' }}>End-to-end encrypted</div>
                 </div>
               </div>
 
-              {/* New Card 2: Multimodal AI */}
-              <div className="floating-anim-delayed" style={{ position: 'absolute', bottom: '10%', right: '-10%', zIndex: 3, background: '#fff', borderRadius: 16, padding: '12px 16px', boxShadow: '0 10px 25px rgba(0,0,0,0.06)', display: 'flex', alignItems: 'center', gap: 10, width: 200 }}>
-                <div style={{ width: 32, height: 32, borderRadius: 10, background: '#EEF2FF', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <Zap size={16} color="#4F46E5" />
-                </div>
-                <div>
-                  <div style={{ fontSize: '0.75rem', fontWeight: 800, color: '#111827' }}>Multimodal Analysis</div>
-                  <div style={{ fontSize: '0.65rem', color: '#6B7280' }}>MRI + Clinical Data</div>
-                </div>
-              </div>
-
-            </div>
-          </div>
-
-          {/* ── GRID 4 (Bottom-Right): Human Element (Doctor) ── */}
-          <div className="hero-col-right" style={{ position: 'relative', display: 'flex', justifyContent: 'center' }}>
-            <div style={{ position: 'relative', width: '100%', maxWidth: 360, display: 'flex', justifyContent: 'center' }}>
-              {/* Backdrop blob behind doctor */}
-              <div style={{ position: 'absolute', bottom: 0, width: '110%', height: '80%', background: '#E0E7FF', borderRadius: '50% 50% 0 0', opacity: 0.7, zIndex: 0 }} />
-
-              {/* Using user's custom image */}
-              <img src="/hero_doctor_exact.webp" alt="Medical Professional" style={{ height: 460, objectFit: 'contain', position: 'relative', zIndex: 1, filter: 'drop-shadow(0 20px 30px rgba(0,0,0,0.15))' }} />
-
-              {/* Floating SVG Brain (near doctor) */}
-              <div style={{ position: 'absolute', bottom: '10%', right: '15%', background: '#4F46E5', borderRadius: '35%', padding: 12, boxShadow: '0 10px 25px rgba(79,70,229,0.4)', animation: 'heroFloat 5s ease-in-out infinite 0.3s', zIndex: 4 }}>
-                <Brain size={24} color="#fff" strokeWidth={1.5} />
-              </div>
-
-              {/* Decorative Squiggle (top right) */}
-              <div style={{ position: 'absolute', top: '0%', right: '-15%', opacity: 0.8, zIndex: 1, transform: 'rotate(15deg)' }}>
-                <svg width="40" height="40" viewBox="0 0 40 40" fill="none">
-                  <path d="M5 20 C10 5, 20 5, 25 20 S40 35, 45 20" stroke="#3B82F6" strokeWidth="4" strokeLinecap="round" fill="none" />
-                </svg>
-              </div>
-              <div className="floating-anim" style={{ position: 'absolute', top: '5%', left: '-10%', zIndex: 3 }}>
+              {/* Floating Badge 4: Risk Score (Bottom Right) */}
+              <div className="floating-anim-delayed-more" style={{ position: 'absolute', bottom: -15, right: 30, zIndex: 5 }}>
                 <HeroCardRisk />
               </div>
-              <div className="floating-anim-delayed" style={{ position: 'absolute', bottom: '15%', right: '-15%', zIndex: 3 }}>
-                <HeroCardDoctors />
-              </div>
+
             </div>
           </div>
 
