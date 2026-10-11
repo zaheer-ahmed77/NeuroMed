@@ -620,58 +620,39 @@ a:hover {
 }
 
 /* ============================================================
-   RESPONSIVE HERO SECTION (Zoom-resilient 2-Column Showcase)
+   RESPONSIVE HERO GRID (2x2) - Zoom Resilient
    ============================================================ */
-.hero-container {
+.hero-grid {
   display: grid !important;
   grid-template-columns: 1fr 1fr;
-  align-items: center;
-  gap: 48px;
+  grid-template-rows: auto auto;
+  column-gap: 40px;
+  row-gap: 65px;
   width: 100%;
-  max-width: 1280px;
-  padding: 40px 32px;
+  max-width: 1440px;
+  padding: 30px 32px 60px 32px;
   margin: 0 auto;
-  position: relative;
+  align-items: center;
   z-index: 2;
   box-sizing: border-box;
 }
 
-.hero-showcase-stage {
-  position: relative;
-  width: 100%;
-  max-width: 540px;
-  height: 520px;
-  margin: 0 auto;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: transform 0.3s ease;
-}
-
-@media (max-width: 1200px) {
-  .hero-container {
-    gap: 32px;
-    padding: 32px 24px;
-  }
-  .hero-showcase-stage {
+@media (max-width: 1250px) {
+  .hero-col-left, .hero-col-right, .hero-col-new {
     transform: scale(0.92);
-    transform-origin: center right;
+    transform-origin: center;
   }
 }
 
-@media (max-width: 1024px) {
-  .hero-container {
+@media (max-width: 1100px) {
+  .hero-grid {
     grid-template-columns: 1fr;
-    padding-top: 60px;
-    gap: 48px;
+    grid-template-rows: auto;
+    row-gap: 50px;
+    padding-top: 40px;
   }
-  .hero-col-content {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    text-align: center;
-  }
-  .hero-col-content p {
+  .hero-col-center, .hero-col-left, .hero-col-new, .hero-col-right {
+    justify-content: center !important;
     text-align: center;
   }
   .hero-stats-row {
@@ -682,27 +663,16 @@ a:hover {
   .stat-divider {
     display: none !important;
   }
-  .hero-showcase-stage {
+  .hero-col-left, .hero-col-right, .hero-col-new {
     transform: scale(0.9);
     transform-origin: center;
   }
 }
 
-@media (max-width: 640px) {
-  .hero-container {
-    padding: 24px 16px;
-  }
-  .hero-showcase-stage {
-    transform: scale(0.78);
+@media (max-width: 600px) {
+  .hero-col-left, .hero-col-right, .hero-col-new {
+    transform: scale(0.82);
     transform-origin: center;
-    height: 440px;
-  }
-}
-
-@media (max-width: 440px) {
-  .hero-showcase-stage {
-    transform: scale(0.68);
-    height: 380px;
   }
 }
 
