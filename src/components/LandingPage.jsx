@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Show, UserButton } from '@clerk/react';
 import AuthForm from './AuthForm';
 import {
   Brain, Activity, ChevronRight, Shield, X, Menu, Info,
@@ -241,7 +242,13 @@ function LandingPage({ onLogin, navigate }) {
           {/* Right actions */}
           <div className="lp-desktop-nav" style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
             <button onClick={() => navigate('about')} className="lp-nav-btn"><Info size={14} /> About</button>
-            <button onClick={() => setShowAuthModal(true)} className="lp-cta-primary">Access Platform →</button>
+            <Show when="signed-out">
+              <button onClick={() => setShowAuthModal(true)} className="lp-cta-primary">Access Platform →</button>
+            </Show>
+            <Show when="signed-in">
+              <button onClick={() => navigate('dashboard')} className="lp-cta-primary">Dashboard →</button>
+              <UserButton afterSignOutUrl="/" />
+            </Show>
           </div>
 
           {/* Mobile burger */}
@@ -263,9 +270,19 @@ function LandingPage({ onLogin, navigate }) {
               </button>
             );
           })}
-          <button onClick={() => setShowAuthModal(true)} className="lp-cta-primary" style={{ marginTop: 24, padding: '16px', fontSize: '1rem', borderRadius: 14 }}>
-            Access Platform
-          </button>
+          <Show when="signed-out">
+            <button onClick={() => { setShowAuthModal(true); setMobileNavOpen(false); }} className="lp-cta-primary" style={{ marginTop: 24, padding: '16px', fontSize: '1rem', borderRadius: 14 }}>
+              Access Platform
+            </button>
+          </Show>
+          <Show when="signed-in">
+            <div style={{ marginTop: 24, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <button onClick={() => { navigate('dashboard'); setMobileNavOpen(false); }} className="lp-cta-primary" style={{ flex: 1, padding: '16px', fontSize: '1rem', borderRadius: 14, marginRight: 12 }}>
+                Dashboard →
+              </button>
+              <UserButton afterSignOutUrl="/" />
+            </div>
+          </Show>
         </div>
       )}
 

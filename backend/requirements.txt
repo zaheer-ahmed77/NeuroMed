@@ -7,11 +7,10 @@ Pillow
 torch
 torchvision
 motor
-passlib[bcrypt]
-PyJWT
+PyJWT[crypto]
+cryptography
 python-dotenv
 pydantic[email]
-google-auth
 requests
 gunicorn
 uvicorn[standard]

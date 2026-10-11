@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect, useContext } from 'react';
 import { User, Settings, LogOut, Menu, ChevronRight, Zap } from 'lucide-react';
+import { UserButton } from '@clerk/react';
 import { AuthContext } from '../context/AuthContext';
 
 const NeuroMedLogo = ({ size = 22 }) => (
@@ -92,6 +93,11 @@ const Header = ({ onLogout, setActiveTab, sidebarOpen, setSidebarOpen, activeTab
           }}>
             <Zap size={11} />
             <span className="hide-on-mobile-text">Demo Mode</span>
+          </div>
+        )}
+        {!isDemoMode && (
+          <div style={{ display: 'flex', alignItems: 'center', marginRight: 4 }}>
+            <UserButton afterSignOutUrl="/" />
           </div>
         )}
         <div className="profile-container" ref={dropdownRef}>

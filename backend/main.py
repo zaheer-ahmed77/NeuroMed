@@ -30,13 +30,8 @@ import math
 # Local imports
 from database import connect_to_mongo, close_mongo_connection, get_database
 from auth import (
-    verify_password, 
-    get_password_hash, 
-    create_access_token, 
-    verify_google_token,
-    SECRET_KEY, 
-    ALGORITHM, 
-    ACCESS_TOKEN_EXPIRE_MINUTES
+    verify_clerk_token,
+    sync_clerk_user
 )
 from models import (
     UserCreate, 
@@ -135,7 +130,7 @@ swin_model = None
 device = None
 clinical_model = None
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login")
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login", auto_error=False)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -192,112 +187,64 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# --- AUTH DEPENDENCY ---
-async def get_current_user(token: str = Depends(oauth2_scheme)):
+# --- AUTH DEPENDENCIES ---
+async def get_current_user(token: Optional[str] = Depends(oauth2_scheme), authorization: Optional[str] = Header(None)):
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="Could not validate credentials",
         headers={"WWW-Authenticate": "Bearer"},
     )
+    auth_token = token
+    if not auth_token and authorization:
+        if authorization.lower().startswith("bearer "):
+            auth_token = authorization[7:].strip()
+        else:
+            auth_token = authorization.strip()
+            
+    if not auth_token:
+        raise credentials_exception
+
+    payload = verify_clerk_token(auth_token)
+    if not payload or not payload.get("sub"):
+        raise credentials_exception
+
+    db = get_database()
     try:
-        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-        email: str = payload.get("sub")
-        if email is None:
+        user = await sync_clerk_user(payload, db)
+        if not user:
             raise credentials_exception
-    except JWTError:
+        return user
+    except Exception as e:
+        print(f"Error resolving Clerk user: {e}")
         raise credentials_exception
-        
-    db = get_database()
-    user = await db.users.find_one({"email": email})
-    if user is None:
-        raise credentials_exception
-    return user
 
-# --- AUTH ROUTES ---
-@app.post("/register", response_model=UserOut)
-async def register(user_data: UserCreate):
+async def get_optional_user(authorization: Optional[str] = None):
+    if not authorization:
+        return None
+    token = authorization[7:].strip() if authorization.lower().startswith("bearer ") else authorization.strip()
+    if not token:
+        return None
+    payload = verify_clerk_token(token)
+    if not payload or not payload.get("sub"):
+        return None
     db = get_database()
-    existing_user = await db.users.find_one({"email": user_data.email})
-    if existing_user:
-        raise HTTPException(status_code=400, detail="Email already registered")
-        
-    hashed_password = get_password_hash(user_data.password)
-    user_dict = {
-        "fullName": user_data.fullName,
-        "email": user_data.email,
-        "hashed_password": hashed_password,
-        "settings": {"saveHistory": True, "emailNotifications": True},
-        "avatar": None,
-        "created_at": datetime.now(timezone.utc)
-    }
-    
-    result = await db.users.insert_one(user_dict)
-    
-    return UserOut(
-        id=str(result.inserted_id),
-        fullName=user_data.fullName,
-        email=user_data.email,
-        avatar=None
-    )
+    try:
+        return await sync_clerk_user(payload, db)
+    except Exception:
+        return None
 
-@app.post("/login", response_model=Token)
-async def login(user_data: UserLogin):
-    db = get_database()
-    user = await db.users.find_one({"email": user_data.email})
-    
-    if not user or not verify_password(user_data.password, user["hashed_password"]):
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Incorrect email or password",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
-        
-    access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
-    access_token = create_access_token(
-        data={"sub": user["email"]}, expires_delta=access_token_expires
-    )
-    
-    return {"access_token": access_token, "token_type": "bearer"}
+# --- DEPRECATED AUTH ROUTES (MIGRATED TO CLERK) ---
+@app.post("/register")
+async def register():
+    return JSONResponse(status_code=400, content={"error": "deprecated", "message": "Authentication is now managed by Clerk. Please use Clerk on the frontend."})
 
-@app.post("/google-login", response_model=Token)
-async def google_login(request: GoogleLoginRequest):
-    idinfo = verify_google_token(request.token)
-    if not idinfo:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid Google token",
-        )
-    
-    email = idinfo.get("email")
-    full_name = idinfo.get("name")
-    avatar = idinfo.get("picture")
-    
-    db = get_database()
-    user = await db.users.find_one({"email": email})
-    
-    if not user:
-        # Create user if doesn't exist
-        user_dict = {
-            "fullName": full_name,
-            "email": email,
-            "hashed_password": "", # No password for Google users
-            "settings": {"saveHistory": True, "emailNotifications": True},
-            "avatar": avatar,
-            "created_at": datetime.now(timezone.utc)
-        }
-        result = await db.users.insert_one(user_dict)
-        user = await db.users.find_one({"_id": result.inserted_id})
-    else:
-        # Update avatar if it changed
-        if user.get("avatar") != avatar:
-            await db.users.update_one({"_id": user["_id"]}, {"$set": {"avatar": avatar}})
+@app.post("/login")
+async def login():
+    return JSONResponse(status_code=400, content={"error": "deprecated", "message": "Authentication is now managed by Clerk. Please use Clerk on the frontend."})
 
-    access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
-    access_token = create_access_token(
-        data={"sub": user["email"]}, expires_delta=access_token_expires
-    )
-    
-    return {"access_token": access_token, "token_type": "bearer"}
+@app.post("/google-login")
+async def google_login():
+    return JSONResponse(status_code=400, content={"error": "deprecated", "message": "Authentication is now managed by Clerk. Please use Clerk on the frontend."})
 
 # --- DOCTOR ROUTES ---
 def haversine(lat1, lon1, lat2, lon2):
@@ -375,8 +322,7 @@ async def update_users_me(user_update: UserUpdate, current_user: dict = Depends(
             raise HTTPException(status_code=400, detail="Email already registered")
         update_data["email"] = user_update.email
         
-    if user_update.password is not None:
-        update_data["hashed_password"] = get_password_hash(user_update.password)
+    # Password management is handled by Clerk
         
     if user_update.avatar is not None:
         update_data["avatar"] = user_update.avatar
@@ -594,28 +540,23 @@ async def predict(file: UploadFile = File(...), authorization: Optional[str] = H
         }
         
         # If token is provided in header, try to save to history
-        if authorization and authorization.startswith("Bearer "):
-            token = authorization.split(" ")[1]
-            try:
-                payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-                email: str = payload.get("sub")
-                if email:
-                    db = get_database()
-                    user = await db.users.find_one({"email": email})
-                    if user:
-                        # Check user settings for saveHistory
-                        settings = user.get("settings", {})
-                        if settings.get("saveHistory", True):
-                            await db.history.insert_one({
-                                "user_id": str(user["_id"]),
-                                "filename": file.filename,
-                                "patient_name": result_data["patient_name"],
-                                "prediction": result_data["prediction"],
-                                "confidence": result_data["confidence"],
-                                "timestamp": datetime.now(timezone.utc)
-                            })
-            except Exception as e:
-                print("Failed to save history:", str(e))
+        if authorization:
+            user = await get_optional_user(authorization)
+            if user:
+                settings = user.get("settings", {})
+                if settings.get("saveHistory", True):
+                    try:
+                        db = get_database()
+                        await db.history.insert_one({
+                            "user_id": str(user["_id"]),
+                            "filename": file.filename,
+                            "patient_name": result_data["patient_name"],
+                            "prediction": result_data["prediction"],
+                            "confidence": result_data["confidence"],
+                            "timestamp": datetime.now(timezone.utc)
+                        })
+                    except Exception as e:
+                        print("Failed to save history:", str(e))
         
         return result_data
     
@@ -674,30 +615,26 @@ async def analyze_clinical(
         }
         
         # Save history if authenticated
-        if authorization and authorization.startswith("Bearer "):
-            token = authorization.split(" ")[1]
-            try:
-                payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-                email: str = payload.get("sub")
-                if email:
-                    db = get_database()
-                    user = await db.users.find_one({"email": email})
-                    if user:
-                        settings = user.get("settings", {})
-                        if settings.get("saveHistory", True):
-                            history_item = {
-                                "user_id": str(user["_id"]),
-                                "type": "clinical",
-                                "patient_name": request.patientName or "Unknown Patient",
-                                "symptoms": [f for f, v in request.symptoms.items() if v],
-                                "prediction": risk_level,
-                                "confidence": confidence,
-                                "timestamp": datetime.now(timezone.utc)
-                            }
-                            res = await db.history.insert_one(history_item)
-                            result_data["id"] = str(res.inserted_id)
-            except Exception as e:
-                print("Failed to save clinical history:", str(e))
+        if authorization:
+            user = await get_optional_user(authorization)
+            if user:
+                settings = user.get("settings", {})
+                if settings.get("saveHistory", True):
+                    try:
+                        db = get_database()
+                        history_item = {
+                            "user_id": str(user["_id"]),
+                            "type": "clinical",
+                            "patient_name": request.patientName or "Unknown Patient",
+                            "symptoms": [f for f, v in request.symptoms.items() if v],
+                            "prediction": risk_level,
+                            "confidence": confidence,
+                            "timestamp": datetime.now(timezone.utc)
+                        }
+                        res = await db.history.insert_one(history_item)
+                        result_data["id"] = str(res.inserted_id)
+                    except Exception as e:
+                        print("Failed to save clinical history:", str(e))
                 
         return result_data
     except Exception as e:
@@ -846,30 +783,26 @@ async def analyze_fusion(
             "clinical_risk": "High" if clin_risk_prob >= 0.40889 else "Low"
         }
         
-        if authorization and authorization.startswith("Bearer "):
-            token = authorization.split(" ")[1]
-            try:
-                payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-                email: str = payload.get("sub")
-                if email:
+        if authorization:
+            user = await get_optional_user(authorization)
+            if user and user.get("settings", {}).get("saveHistory", True):
+                try:
                     db = get_database()
-                    user = await db.users.find_one({"email": email})
-                    if user and user.get("settings", {}).get("saveHistory", True):
-                        await db.history.insert_one({
-                            "user_id": str(user["_id"]),
-                            "analysis_id": analysis_id,
-                            "type": "fusion",
-                            "patient_name": result_data["patient_name"],
-                            "prediction": result_data["prediction"],
-                            "confidence": result_data["confidence"],
-                            "explanation": explanation,
-                            "probabilities": mri_probs_dict,
-                            "image_path": save_path,
-                            "overlay_path": overlay_path,
-                            "timestamp": datetime.now(timezone.utc)
-                        })
-            except Exception:
-                pass
+                    await db.history.insert_one({
+                        "user_id": str(user["_id"]),
+                        "analysis_id": analysis_id,
+                        "type": "fusion",
+                        "patient_name": result_data["patient_name"],
+                        "prediction": result_data["prediction"],
+                        "confidence": result_data["confidence"],
+                        "explanation": explanation,
+                        "probabilities": mri_probs_dict,
+                        "image_path": save_path,
+                        "overlay_path": overlay_path,
+                        "timestamp": datetime.now(timezone.utc)
+                    })
+                except Exception as e:
+                    print("Failed to save fusion history:", str(e))
                 
         return result_data
     except Exception as e:
@@ -970,31 +903,27 @@ async def brainx_analyze_mri(file: UploadFile = File(...), authorization: Option
             "timestamp": datetime.now(timezone.utc)
         }
         
-        if authorization and authorization.startswith("Bearer "):
-            token = authorization.split(" ")[1]
-            try:
-                payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-                email: str = payload.get("sub")
-                if email:
+        if authorization:
+            user = await get_optional_user(authorization)
+            if user:
+                try:
                     db = get_database()
-                    user = await db.users.find_one({"email": email})
-                    if user:
-                        await db.history.insert_one({
-                            "user_id": str(user["_id"]),
-                            "analysis_id": analysis_id,
-                            "type": "mri",
-                            "patient_name": result_data["patient_name"],
-                            "filename": file.filename,
-                            "prediction": predicted_class,
-                            "confidence": confidence,
-                            "explanation": explanation,
-                            "probabilities": probs_dict,
-                            "image_path": save_path,
-                            "overlay_path": overlay_path,
-                            "timestamp": datetime.now(timezone.utc)
-                        })
-            except Exception:
-                pass
+                    await db.history.insert_one({
+                        "user_id": str(user["_id"]),
+                        "analysis_id": analysis_id,
+                        "type": "mri",
+                        "patient_name": result_data["patient_name"],
+                        "filename": file.filename,
+                        "prediction": predicted_class,
+                        "confidence": confidence,
+                        "explanation": explanation,
+                        "probabilities": probs_dict,
+                        "image_path": save_path,
+                        "overlay_path": overlay_path,
+                        "timestamp": datetime.now(timezone.utc)
+                    })
+                except Exception as e:
+                    print("Failed to save MRI history:", str(e))
 
         return result_data
     except Exception as e:
