@@ -1,5 +1,4 @@
 import React, { useState, useContext, useEffect } from 'react';
-import { AuthenticateWithRedirectCallback } from '@clerk/react';
 import LandingPage from './components/LandingPage';
 import Dashboard from './components/Dashboard';
 import AboutUs from './components/AboutUs';
@@ -15,12 +14,6 @@ function AppContent() {
   });
   const [showLoader, setShowLoader] = useState(false);
   const { token, logout, isLoading } = useContext(AuthContext);
-
-  // Check if current URL is SSO callback from Google / OAuth
-  const isSSOCallback = window.location.pathname.startsWith('/sso-callback') || 
-                        window.location.hash.includes('sso-callback') ||
-                        window.location.search.includes('__clerk_status') ||
-                        window.location.search.includes('created_session_id');
 
   useEffect(() => {
     const handleHash = () => {
@@ -68,18 +61,6 @@ function AppContent() {
     logout();
     window.location.hash = 'home';
   };
-
-  if (isSSOCallback) {
-    return (
-      <div style={{ display: 'flex', minHeight: '100vh', alignItems: 'center', justifyContent: 'center', background: '#FAFAFA' }}>
-        <AuthenticateWithRedirectCallback 
-          signInForceRedirectUrl="/#overview" 
-          signUpForceRedirectUrl="/#overview" 
-        />
-        <LoadingScreen message="Completing authentication..." />
-      </div>
-    );
-  }
 
   if (isLoading || showLoader) {
     return <LoadingScreen message={showLoader && !isLoading ? 'Welcome back' : 'Loading NeuroMed'} />;

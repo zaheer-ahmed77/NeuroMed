@@ -55,112 +55,63 @@ const AuthForm = ({ onLogin }) => {
     setIsLoading(true);
 
     try {
-      // Wait for Clerk client if it's still initializing
-      let activeSignIn = signIn || clerk.client?.signIn;
-      let activeSignUp = signUp || clerk.client?.signUp;
-
-      if (!activeSignIn && !activeSignUp) {
-        for (let i = 0; i < 20; i++) {
-          await new Promise(r => setTimeout(r, 200));
-          activeSignIn = signIn || clerk.client?.signIn;
-          activeSignUp = signUp || clerk.client?.signUp;
-          if (activeSignIn || activeSignUp) break;
-        }
-      }
-
-      const activeSetActive = isLogin 
-        ? (setActiveSignIn || clerk.setActive) 
-        : (setActiveSignUp || clerk.setActive);
-
       if (isLogin) {
-        if (!activeSignIn) {
-          throw new Error('Authentication is still connecting. Please check your connection and try again.');
+        if (!isSignInLoaded) {
+          throw new Error('Authentication is still connecting. Please wait a moment.');
         }
 
-        const result = await activeSignIn.create({
+        const result = await signIn.create({
           identifier: email.trim(),
           password: password,
         });
 
-        // status==='complete' OR session was created (dev key quirk where status may be undefined)
-        if (result.status === 'complete' || result.createdSessionId) {
-          if (activeSetActive) {
-            await activeSetActive({ session: result.createdSessionId });
-          }
+        if (result.status === 'complete') {
+          await setActiveSignIn({ session: result.createdSessionId });
           if (onLogin) onLogin();
-        } else if (result.status === 'needs_second_factor') {
-          setError('Two-factor authentication is required. Please disable 2FA in your Clerk account settings or use a 2FA code.');
-          setIsLoading(false);
-        } else if (result.status === 'needs_identifier' || result.status === 'needs_first_factor') {
-          setError('Invalid email or password. Please check your credentials and try again.');
-          setIsLoading(false);
-        } else {
-          // Fallback: try to set active session anyway if we have a session ID
-          console.warn('Sign in status:', result.status, 'Session:', result.createdSessionId);
-          if (result.createdSessionId && activeSetActive) {
-            try {
-              await activeSetActive({ session: result.createdSessionId });
-              if (onLogin) onLogin();
-              return;
-            } catch (_) { /* ignore */ }
+        } else if (result.status === 'needs_first_factor') {
+          const factorResult = await signIn.attemptFirstFactor({
+            strategy: 'password',
+            password: password,
+          });
+          if (factorResult.status === 'complete') {
+            await setActiveSignIn({ session: factorResult.createdSessionId });
+            if (onLogin) onLogin();
+          } else {
+            setError('Sign in could not be completed. Please check your credentials.');
           }
-          setError(`Sign in could not be completed. Please try using Demo Mode or contact support.`);
-          setIsLoading(false);
+        } else {
+          setError('Sign in incomplete. Please try again.');
         }
       } else {
-        if (!activeSignUp) {
-          throw new Error('Authentication is still connecting. Please check your connection and try again.');
+        if (!isSignUpLoaded) {
+          throw new Error('Authentication is still connecting. Please wait a moment.');
         }
 
         const nameParts = fullName.trim().split(' ');
         const firstName = nameParts[0] || 'Physician';
         const lastName = nameParts.slice(1).join(' ') || '';
 
-        let signUpResult;
-        try {
-          signUpResult = await activeSignUp.create({
-            emailAddress: email.trim(),
-            password: password,
-            firstName: firstName,
-            lastName: lastName || undefined,
-          });
-        } catch (signUpErr) {
-          // Handle Clerk errors from .create()
-          throw signUpErr;
-        }
+        const result = await signUp.create({
+          firstName: firstName,
+          lastName: lastName || undefined,
+          emailAddress: email.trim(),
+          password: password,
+        });
 
-        if (signUpResult.status === 'complete') {
-          if (activeSetActive) {
-            await activeSetActive({ session: signUpResult.createdSessionId });
-          }
+        if (result.status === 'complete') {
+          await setActiveSignUp({ session: result.createdSessionId });
           if (onLogin) onLogin();
         } else {
-          // Need email verification — prepare email code
-          const needsEmailVerification = 
-            signUpResult.status === 'missing_requirements' ||
-            signUpResult.unverifiedFields?.includes('email_address') ||
-            signUpResult.requiredFields?.includes('email_address');
-          
-          if (needsEmailVerification) {
-            try {
-              await activeSignUp.prepareEmailAddressVerification({ strategy: 'email_code' });
-              setPendingVerification(true);
-              setSuccess(`A 6-digit verification code was sent to ${email.trim()}`);
-            } catch (prepErr) {
-              const prepMsg = prepErr.errors?.[0]?.longMessage || prepErr.errors?.[0]?.message || prepErr.message;
-              setError(`Could not send verification code: ${prepMsg}`);
-            }
-          } else {
-            console.warn('Sign up status:', signUpResult.status, signUpResult);
-            setError(`Sign up could not be completed (status: ${signUpResult.status}). Please try again.`);
-          }
-          setIsLoading(false);
+          await signUp.prepareEmailAddressVerification({ strategy: 'email_code' });
+          setPendingVerification(true);
+          setSuccess(`A 6-digit verification code was sent to ${email.trim()}`);
         }
       }
     } catch (err) {
       console.error('Auth error:', err);
       const msg = err.errors?.[0]?.longMessage || err.errors?.[0]?.message || err.message || 'Authentication failed.';
       setError(msg);
+    } finally {
       setIsLoading(false);
     }
   };
@@ -168,62 +119,25 @@ const AuthForm = ({ onLogin }) => {
   const handleVerifyCode = async (e) => {
     e.preventDefault();
     if (!verificationCode.trim()) return;
+    if (!isSignUpLoaded) return;
     setError(null);
     setIsLoading(true);
 
     try {
-      const activeSignUp = signUp || clerk.client?.signUp;
-      const activeSetActive = setActiveSignUp || clerk.setActive;
-
-      if (!activeSignUp) {
-        throw new Error('Verification is initializing. Please try again.');
-      }
-
-      const completeSignUp = await activeSignUp.attemptEmailAddressVerification({
+      const result = await signUp.attemptEmailAddressVerification({
         code: verificationCode.trim(),
       });
 
-      if (completeSignUp.status === 'complete') {
-        if (activeSetActive) {
-          await activeSetActive({ session: completeSignUp.createdSessionId });
-        }
+      if (result.status === 'complete') {
+        await setActiveSignUp({ session: result.createdSessionId });
         if (onLogin) onLogin();
       } else {
         setError('Verification could not be completed. Please check the code.');
-        setIsLoading(false);
       }
     } catch (err) {
       const msg = err.errors?.[0]?.longMessage || err.errors?.[0]?.message || err.message || 'Verification failed.';
       setError(msg);
-      setIsLoading(false);
-    }
-  };
-
-  const handleGoogleSignIn = async () => {
-    setError(null);
-    setIsLoading(true);
-    try {
-      if (!clerk.loaded) {
-        for (let i = 0; i < 15; i++) {
-          await new Promise(r => setTimeout(r, 200));
-          if (clerk.loaded) break;
-        }
-      }
-
-      const activeSignIn = signIn || clerk.client?.signIn;
-      if (!activeSignIn) {
-        throw new Error('Authentication service is still connecting. Please try again.');
-      }
-
-      await activeSignIn.authenticateWithRedirect({
-        strategy: 'oauth_google',
-        redirectUrl: '/sso-callback',
-        redirectUrlComplete: '/#overview',
-      });
-    } catch (err) {
-      console.error('Google sign-in error:', err);
-      const msg = err.errors?.[0]?.longMessage || err.errors?.[0]?.message || 'Google sign-in failed.';
-      setError(msg);
+    } finally {
       setIsLoading(false);
     }
   };
@@ -479,39 +393,7 @@ const AuthForm = ({ onLogin }) => {
                 </form>
               )}
 
-              {/* Divider */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: 14, margin: '24px 0' }}>
-                <div style={{ flex: 1, height: 1, background: '#E5E7EB' }} />
-                <span style={{ fontSize: '0.75rem', color: '#9CA3AF', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px' }}>or continue with</span>
-                <div style={{ flex: 1, height: 1, background: '#E5E7EB' }} />
-              </div>
 
-              {/* Google Pill Button - Exactly like previous design */}
-              <div style={{ display: 'flex', justifyContent: 'center' }}>
-                <button
-                  type="button"
-                  onClick={handleGoogleSignIn}
-                  disabled={isLoading}
-                  style={{
-                    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10,
-                    width: '100%', maxWidth: 260,
-                    padding: '10px 20px', borderRadius: 999,
-                    border: '1.5px solid #E5E7EB', background: '#FFFFFF',
-                    cursor: isLoading ? 'wait' : 'pointer', boxShadow: '0 1px 3px rgba(0,0,0,0.06)',
-                    transition: 'all 0.2s', fontFamily: "'Inter', sans-serif"
-                  }}
-                  onMouseEnter={e => { e.currentTarget.style.borderColor = '#CBD5E1'; e.currentTarget.style.boxShadow = '0 2px 6px rgba(0,0,0,0.08)'; }}
-                  onMouseLeave={e => { e.currentTarget.style.borderColor = '#E5E7EB'; e.currentTarget.style.boxShadow = '0 1px 3px rgba(0,0,0,0.06)'; }}
-                >
-                  <svg width="18" height="18" viewBox="0 0 24 24">
-                    <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
-                    <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
-                    <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/>
-                    <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
-                  </svg>
-                  <span style={{ fontSize: '0.88rem', fontWeight: 600, color: '#374151' }}>Sign in with Google</span>
-                </button>
-              </div>
 
               {/* Demo mode */}
               {isLogin && !pendingVerification && (
