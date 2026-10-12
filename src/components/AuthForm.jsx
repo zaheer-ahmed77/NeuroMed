@@ -82,14 +82,29 @@ const AuthForm = ({ onLogin }) => {
           password: password,
         });
 
-        if (result.status === 'complete') {
+        // status==='complete' OR session was created (dev key quirk where status may be undefined)
+        if (result.status === 'complete' || result.createdSessionId) {
           if (activeSetActive) {
             await activeSetActive({ session: result.createdSessionId });
           }
           if (onLogin) onLogin();
+        } else if (result.status === 'needs_second_factor') {
+          setError('Two-factor authentication is required. Please disable 2FA in your Clerk account settings or use a 2FA code.');
+          setIsLoading(false);
+        } else if (result.status === 'needs_identifier' || result.status === 'needs_first_factor') {
+          setError('Invalid email or password. Please check your credentials and try again.');
+          setIsLoading(false);
         } else {
-          console.warn('Sign in required additional steps:', result.status);
-          setError('Sign in requires further steps. Please check your credentials.');
+          // Fallback: try to set active session anyway if we have a session ID
+          console.warn('Sign in status:', result.status, 'Session:', result.createdSessionId);
+          if (result.createdSessionId && activeSetActive) {
+            try {
+              await activeSetActive({ session: result.createdSessionId });
+              if (onLogin) onLogin();
+              return;
+            } catch (_) { /* ignore */ }
+          }
+          setError(`Sign in could not be completed. Please try using Demo Mode or contact support.`);
           setIsLoading(false);
         }
       } else {
