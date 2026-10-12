@@ -28,21 +28,38 @@ export const AuthProvider = ({ children }) => {
   const [settings, setSettings] = useState({});
   const [isDemoMode, setIsDemoMode] = useState(false);
 
+  // Safety timeout: force loading=false after 5 seconds to prevent infinite spinner
+  useEffect(() => {
+    const safetyTimer = setTimeout(() => {
+      setIsLoading(false);
+    }, 5000);
+    return () => clearTimeout(safetyTimer);
+  }, []);
+
+  // Handle demo mode immediately without waiting for Clerk
+  useEffect(() => {
+    const storedToken = localStorage.getItem('token');
+    if (storedToken === DEMO_TOKEN) {
+      setUser(DEMO_USER);
+      setSettings(DEMO_SETTINGS);
+      setIsDemoMode(true);
+      setIsLoading(false);
+    }
+  }, []);
+
   useEffect(() => {
     let isMounted = true;
 
     async function syncAuth() {
-      // 1. If user activated demo mode
+      // 1. If user activated demo mode — already handled in dedicated useEffect
       if (token === DEMO_TOKEN) {
-        setUser(DEMO_USER);
-        setSettings(DEMO_SETTINGS);
-        setIsDemoMode(true);
         setIsLoading(false);
         return;
       }
 
       // Wait until Clerk is fully loaded
       if (!isClerkLoaded) {
+        // Still waiting for Clerk — do nothing, keep loading
         return;
       }
 
@@ -54,8 +71,9 @@ export const AuthProvider = ({ children }) => {
           if (!isMounted) return;
 
           if (clerkToken) {
-            setToken(clerkToken);
+            // Update token in state but DON'T store old value in deps
             localStorage.setItem('token', clerkToken);
+            setToken(clerkToken);
           }
 
           const formattedUser = {
@@ -66,7 +84,7 @@ export const AuthProvider = ({ children }) => {
           };
           setUser(formattedUser);
 
-          // Sync with backend /me and /settings
+          // Sync with backend /me and /settings (non-blocking, don't hold loading)
           if (clerkToken) {
             try {
               const res = await fetch(`${API_BASE}/me`, {
@@ -98,13 +116,15 @@ export const AuthProvider = ({ children }) => {
           if (isMounted) setIsLoading(false);
         }
       } else {
-        // 3. Not signed in and not demo
-        setToken(null);
-        setUser(null);
-        setSettings({});
-        setIsDemoMode(false);
-        localStorage.removeItem('token');
-        setIsLoading(false);
+        // 3. Not signed in and not demo — clear everything
+        if (isMounted) {
+          setToken(null);
+          setUser(null);
+          setSettings({});
+          setIsDemoMode(false);
+          localStorage.removeItem('token');
+          setIsLoading(false);
+        }
       }
     }
 
@@ -113,7 +133,9 @@ export const AuthProvider = ({ children }) => {
     return () => {
       isMounted = false;
     };
-  }, [isClerkLoaded, isSignedIn, clerkUser, token, getToken]);
+    // Note: 'token' intentionally removed from deps to prevent re-render loop
+    // token state is updated internally by syncAuth itself
+  }, [isClerkLoaded, isSignedIn, clerkUser, getToken]);
 
   const updateSettings = async (newSettings) => {
     if (isDemoMode) {

@@ -55,12 +55,13 @@ function AppContent() {
   }, [token, currentRoute]);
 
   const handleLogin = () => {
-    // Show splash for 500ms after login
+    // Show splash for 800ms after login, then go to dashboard
     setShowLoader(true);
     setTimeout(() => {
       setShowLoader(false);
+      setCurrentRoute('dashboard');
       window.location.hash = 'overview';
-    }, 500);
+    }, 800);
   };
 
   const handleLogout = () => {

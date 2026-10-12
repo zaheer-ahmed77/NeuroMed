@@ -99,28 +99,46 @@ const AuthForm = ({ onLogin }) => {
 
         const nameParts = fullName.trim().split(' ');
         const firstName = nameParts[0] || 'Physician';
-        const lastName = nameParts.slice(1).join(' ') || undefined;
+        const lastName = nameParts.slice(1).join(' ') || '';
 
-        const result = await activeSignUp.create({
-          emailAddress: email.trim(),
-          password: password,
-          firstName: firstName,
-          lastName: lastName,
-        });
+        let signUpResult;
+        try {
+          signUpResult = await activeSignUp.create({
+            emailAddress: email.trim(),
+            password: password,
+            firstName: firstName,
+            lastName: lastName || undefined,
+          });
+        } catch (signUpErr) {
+          // Handle Clerk errors from .create()
+          throw signUpErr;
+        }
 
-        if (result.status === 'complete') {
+        if (signUpResult.status === 'complete') {
           if (activeSetActive) {
-            await activeSetActive({ session: result.createdSessionId });
+            await activeSetActive({ session: signUpResult.createdSessionId });
           }
           if (onLogin) onLogin();
-        } else if (result.status === 'missing_requirements' || result.unverifiedFields?.includes('email_address')) {
-          // Send verification code
-          await activeSignUp.prepareEmailAddressVerification({ strategy: 'email_code' });
-          setPendingVerification(true);
-          setSuccess(`A 6-digit verification code was sent to ${email.trim()}`);
-          setIsLoading(false);
         } else {
-          setError('Sign up could not be completed. Please try again.');
+          // Need email verification — prepare email code
+          const needsEmailVerification = 
+            signUpResult.status === 'missing_requirements' ||
+            signUpResult.unverifiedFields?.includes('email_address') ||
+            signUpResult.requiredFields?.includes('email_address');
+          
+          if (needsEmailVerification) {
+            try {
+              await activeSignUp.prepareEmailAddressVerification({ strategy: 'email_code' });
+              setPendingVerification(true);
+              setSuccess(`A 6-digit verification code was sent to ${email.trim()}`);
+            } catch (prepErr) {
+              const prepMsg = prepErr.errors?.[0]?.longMessage || prepErr.errors?.[0]?.message || prepErr.message;
+              setError(`Could not send verification code: ${prepMsg}`);
+            }
+          } else {
+            console.warn('Sign up status:', signUpResult.status, signUpResult);
+            setError(`Sign up could not be completed (status: ${signUpResult.status}). Please try again.`);
+          }
           setIsLoading(false);
         }
       }
