@@ -130,7 +130,14 @@ const AuthForm = ({ onLogin }) => {
           }
           if (onLogin) onLogin();
         } else {
-          await activeSignUp.prepareEmailAddressVerification({ strategy: 'email_code' });
+          // Prepare email verification safely on created result, activeSignUp, or window.Clerk
+          if (typeof result?.prepareEmailAddressVerification === 'function') {
+            await result.prepareEmailAddressVerification({ strategy: 'email_code' });
+          } else if (typeof activeSignUp?.prepareEmailAddressVerification === 'function') {
+            await activeSignUp.prepareEmailAddressVerification({ strategy: 'email_code' });
+          } else if (typeof window.Clerk?.client?.signUp?.prepareEmailAddressVerification === 'function') {
+            await window.Clerk.client.signUp.prepareEmailAddressVerification({ strategy: 'email_code' });
+          }
           setPendingVerification(true);
           setSuccess(`A 6-digit verification code was sent to ${email.trim()}`);
         }
@@ -158,13 +165,20 @@ const AuthForm = ({ onLogin }) => {
         throw new Error('Authentication service is still initializing. Please wait a moment.');
       }
 
-      const result = await activeSignUp.attemptEmailAddressVerification({
-        code: verificationCode.trim(),
-      });
+      let completeSignUp;
+      if (typeof window.Clerk?.client?.signUp?.attemptEmailAddressVerification === 'function') {
+        completeSignUp = await window.Clerk.client.signUp.attemptEmailAddressVerification({
+          code: verificationCode.trim(),
+        });
+      } else if (typeof activeSignUp?.attemptEmailAddressVerification === 'function') {
+        completeSignUp = await activeSignUp.attemptEmailAddressVerification({
+          code: verificationCode.trim(),
+        });
+      }
 
-      if (result.status === 'complete') {
-        if (activeSetActive && result.createdSessionId) {
-          await activeSetActive({ session: result.createdSessionId });
+      if (completeSignUp && completeSignUp.status === 'complete') {
+        if (activeSetActive && completeSignUp.createdSessionId) {
+          await activeSetActive({ session: completeSignUp.createdSessionId });
         }
         if (onLogin) onLogin();
       } else {
