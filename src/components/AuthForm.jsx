@@ -55,43 +55,69 @@ const AuthForm = ({ onLogin }) => {
     setIsLoading(true);
 
     try {
+      // Gracefully resolve active Clerk auth client (from hooks or window.Clerk fallback)
+      let activeSignUp = signUp || window.Clerk?.client?.signUp;
+      let activeSignIn = signIn || window.Clerk?.client?.signIn;
+      let activeSetActive = (isLogin ? setActiveSignIn : setActiveSignUp) || 
+                            (window.Clerk?.setActive ? window.Clerk.setActive.bind(window.Clerk) : null);
+
+      if (isLogin && !activeSignIn) {
+        for (let i = 0; i < 25; i++) {
+          await new Promise(r => setTimeout(r, 150));
+          activeSignIn = signIn || window.Clerk?.client?.signIn;
+          activeSetActive = setActiveSignIn || (window.Clerk?.setActive ? window.Clerk.setActive.bind(window.Clerk) : null);
+          if (activeSignIn) break;
+        }
+      } else if (!isLogin && !activeSignUp) {
+        for (let i = 0; i < 25; i++) {
+          await new Promise(r => setTimeout(r, 150));
+          activeSignUp = signUp || window.Clerk?.client?.signUp;
+          activeSetActive = setActiveSignUp || (window.Clerk?.setActive ? window.Clerk.setActive.bind(window.Clerk) : null);
+          if (activeSignUp) break;
+        }
+      }
+
       if (isLogin) {
-        if (!isSignInLoaded) {
-          throw new Error('Authentication is still connecting. Please wait a moment.');
+        if (!activeSignIn) {
+          throw new Error('Authentication service is still initializing. Please wait a moment and try again.');
         }
 
-        const result = await signIn.create({
+        const result = await activeSignIn.create({
           identifier: email.trim(),
           password: password,
         });
 
         if (result.status === 'complete') {
-          await setActiveSignIn({ session: result.createdSessionId });
+          if (activeSetActive && result.createdSessionId) {
+            await activeSetActive({ session: result.createdSessionId });
+          }
           if (onLogin) onLogin();
         } else if (result.status === 'needs_first_factor') {
-          const factorResult = await signIn.attemptFirstFactor({
+          const factorResult = await activeSignIn.attemptFirstFactor({
             strategy: 'password',
             password: password,
           });
           if (factorResult.status === 'complete') {
-            await setActiveSignIn({ session: factorResult.createdSessionId });
+            if (activeSetActive && factorResult.createdSessionId) {
+              await activeSetActive({ session: factorResult.createdSessionId });
+            }
             if (onLogin) onLogin();
           } else {
             setError('Sign in could not be completed. Please check your credentials.');
           }
         } else {
-          setError('Sign in incomplete. Please try again.');
+          setError('Sign in incomplete. Please check your credentials.');
         }
       } else {
-        if (!isSignUpLoaded) {
-          throw new Error('Authentication is still connecting. Please wait a moment.');
+        if (!activeSignUp) {
+          throw new Error('Authentication service is still initializing. Please wait a moment and try again.');
         }
 
         const nameParts = fullName.trim().split(' ');
         const firstName = nameParts[0] || 'Physician';
         const lastName = nameParts.slice(1).join(' ') || '';
 
-        const result = await signUp.create({
+        const result = await activeSignUp.create({
           firstName: firstName,
           lastName: lastName || undefined,
           emailAddress: email.trim(),
@@ -99,10 +125,12 @@ const AuthForm = ({ onLogin }) => {
         });
 
         if (result.status === 'complete') {
-          await setActiveSignUp({ session: result.createdSessionId });
+          if (activeSetActive && result.createdSessionId) {
+            await activeSetActive({ session: result.createdSessionId });
+          }
           if (onLogin) onLogin();
         } else {
-          await signUp.prepareEmailAddressVerification({ strategy: 'email_code' });
+          await activeSignUp.prepareEmailAddressVerification({ strategy: 'email_code' });
           setPendingVerification(true);
           setSuccess(`A 6-digit verification code was sent to ${email.trim()}`);
         }
@@ -119,17 +147,25 @@ const AuthForm = ({ onLogin }) => {
   const handleVerifyCode = async (e) => {
     e.preventDefault();
     if (!verificationCode.trim()) return;
-    if (!isSignUpLoaded) return;
     setError(null);
     setIsLoading(true);
 
     try {
-      const result = await signUp.attemptEmailAddressVerification({
+      let activeSignUp = signUp || window.Clerk?.client?.signUp;
+      let activeSetActive = setActiveSignUp || (window.Clerk?.setActive ? window.Clerk.setActive.bind(window.Clerk) : null);
+
+      if (!activeSignUp) {
+        throw new Error('Authentication service is still initializing. Please wait a moment.');
+      }
+
+      const result = await activeSignUp.attemptEmailAddressVerification({
         code: verificationCode.trim(),
       });
 
       if (result.status === 'complete') {
-        await setActiveSignUp({ session: result.createdSessionId });
+        if (activeSetActive && result.createdSessionId) {
+          await activeSetActive({ session: result.createdSessionId });
+        }
         if (onLogin) onLogin();
       } else {
         setError('Verification could not be completed. Please check the code.');
