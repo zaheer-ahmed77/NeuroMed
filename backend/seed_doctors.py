@@ -22,9 +22,9 @@ async def main():
                 except Exception:
                     pass
 
-    # Deployment guide fallback URI
     if not MONGO_URI:
-        MONGO_URI = "mongodb+srv://za5528788_db_user:<REDACTED_PASSWORD>@cluster0.x8nbee8.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0"
+        print("Error: MONGODB_URI not found in environment or .env file.")
+        return
 
     print("Connecting to MongoDB Atlas to seed doctors...")
     client = AsyncIOMotorClient(MONGO_URI)

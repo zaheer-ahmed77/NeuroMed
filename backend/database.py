@@ -7,8 +7,7 @@ from bson import ObjectId
 
 load_dotenv()
 
-ATLAS_FALLBACK_URI = "mongodb+srv://za5528788_db_user:<REDACTED_PASSWORD>@cluster0.x8nbee8.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0"
-MONGODB_URI = os.getenv("MONGODB_URI") or ATLAS_FALLBACK_URI
+MONGODB_URI = os.getenv("MONGODB_URI")
 client = None
 db = None
 

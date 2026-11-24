@@ -7,7 +7,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-CLERK_SECRET_KEY = os.getenv("CLERK_SECRET_KEY", "<REDACTED_CLERK_KEY>")
+CLERK_SECRET_KEY = os.getenv("CLERK_SECRET_KEY")
 CLERK_JWKS_URL = os.getenv(
     "CLERK_JWKS_URL", 
     "https://capital-gorilla-2512.clerk.accounts.dev/.well-known/jwks.json"
