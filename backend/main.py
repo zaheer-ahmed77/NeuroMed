@@ -804,7 +804,7 @@ async def analyze_fusion(
         # 1. PROCESS MRI IMAGE
         contents = await file.read()
         
-        analysis_id = f"BX-{uuid.uuid4().hex[:8].upper()}"
+        analysis_id = f"NM-{uuid.uuid4().hex[:8].upper()}"
         file_ext = file.filename.split('.')[-1]
         save_path = os.path.join('uploads', f"{analysis_id}.{file_ext}")
         os.makedirs('uploads', exist_ok=True)
@@ -963,7 +963,7 @@ class ChatRequest(BaseModel):
     message: str
 
 @app.post("/api/v1/analyze")
-async def brainx_analyze_mri(file: UploadFile = File(...), authorization: Optional[str] = Header(None), patient_name: Optional[str] = Form(None)):
+async def neuromed_analyze_mri(file: UploadFile = File(...), authorization: Optional[str] = Header(None), patient_name: Optional[str] = Form(None)):
     global swin_model, device
     if swin_model is None:
         return JSONResponse(status_code=503, content={"error": "Model not loaded."})
@@ -971,7 +971,7 @@ async def brainx_analyze_mri(file: UploadFile = File(...), authorization: Option
     try:
         contents = await file.read()
         
-        analysis_id = f"BX-{uuid.uuid4().hex[:8].upper()}"
+        analysis_id = f"NM-{uuid.uuid4().hex[:8].upper()}"
         file_ext = file.filename.split('.')[-1]
         save_path = os.path.join('uploads', f"{analysis_id}.{file_ext}")
         os.makedirs('uploads', exist_ok=True)

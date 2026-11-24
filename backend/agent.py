@@ -108,8 +108,8 @@ def generate_explanation(analysis_data: Dict[str, Any]) -> str:
     confidence      = analysis_data.get("confidence", 0)
     probs           = analysis_data.get("probabilities", {})
 
-    prompt = f"""You are an AI assistant inside BrainXAI, a brain MRI analysis application.
-An MRI scan has just been processed by a deep learning model (EfficientNetV2-S).
+    prompt = f"""You are an AI clinical decision support assistant inside NeuroMed AI (Neuromedpk.app), an advanced multimodal brain MRI diagnostic platform.
+An MRI scan has just been processed by a deep learning model (Swin Transformer / EfficientNet).
 
 Analysis results:
 - Predicted class: {predicted_class}
@@ -118,15 +118,17 @@ Analysis results:
 
 A Grad-CAM heatmap was also generated to show which regions of the MRI most influenced the prediction.
 
-Write a clear, friendly explanation (2-3 paragraphs) for the user that covers:
+Write a clear, friendly explanation (2-3 paragraphs) for the clinical summary report that covers:
 1. What the AI detected and what the predicted class means
 2. What the confidence score and probabilities indicate
 3. What the Grad-CAM heatmap represents and why it matters
 
 Rules:
+- Strictly refer to the platform as NeuroMed AI (Neuromedpk.app).
+- Do NOT mention any legacy name like BrainX or BrainXAI.
 - Do NOT fabricate clinical findings not present in the data.
-- Clearly state this is an AI-assisted preliminary diagnosis, and it requires official verification.
-- Use simple, accessible language — avoid heavy medical jargon.
+- Clearly state this is an AI-assisted preliminary assessment, and it requires clinical verification by a medical specialist.
+- Use accessible, professional medical language.
 - Keep it concise and reassuring. Do not output anything other than the explanation."""
 
     try:
@@ -154,7 +156,7 @@ def chat_with_assistant(context_data: Dict[str, Any], user_message: str) -> str:
     confidence  = context_data.get("confidence", 0)
     explanation = context_data.get("explanation", "")
 
-    prompt = f"""You are the BrainXAI AI Assistant.
+    prompt = f"""You are the NeuroMed AI Assistant (Neuromedpk.app).
 
 Current analysis context:
 - Prediction: {prediction}
@@ -165,7 +167,7 @@ User's question: {user_message}
 
 Answer the question helpfully, based strictly on the provided analysis context.
 If the question is unrelated to the MRI analysis, politely redirect the conversation back to the results.
-Always remind the user you are an AI assistant and this is a preliminary diagnosis that requires official verification."""
+Always remind the user you are an AI assistant and this is a preliminary assessment that requires verification by a qualified physician."""
 
     try:
         messages = [

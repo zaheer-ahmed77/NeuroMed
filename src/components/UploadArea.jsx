@@ -627,7 +627,7 @@ const UploadArea = ({ onAnalysisComplete }) => {
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid var(--border)', paddingBottom: 16 }}>
             <div>
               <div style={{ fontSize: '0.8rem', fontWeight: 700, color: '#3B82F6', letterSpacing: '1px', textTransform: 'uppercase', marginBottom: 4 }}>
-                Analysis / {prediction.id || 'BX-UNKNOWN'}
+                Analysis / {prediction.id || 'NM-UNKNOWN'}
               </div>
               <h2 style={{ fontSize: '1.8rem', fontWeight: 900, color: 'var(--text-primary)', margin: 0 }}>Analysis Results</h2>
               <div style={{ fontSize: '0.85rem', color: '#64748B', marginTop: 4 }}>

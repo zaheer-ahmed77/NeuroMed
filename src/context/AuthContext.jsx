@@ -8,7 +8,7 @@ const DEMO_TOKEN = 'DEMO_MODE';
 const DEMO_USER = {
   id: 'demo-user',
   fullName: 'Demo Physician',
-  email: 'demo@neuromed.ai',
+  email: 'demo@neuromedpk.app',
   avatar: null,
 };
 const DEMO_SETTINGS = {

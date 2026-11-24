@@ -7,7 +7,8 @@ from bson import ObjectId
 
 load_dotenv()
 
-MONGODB_URI = os.getenv("MONGODB_URI")
+ATLAS_FALLBACK_URI = "mongodb+srv://za5528788_db_user:<REDACTED_PASSWORD>@cluster0.x8nbee8.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0"
+MONGODB_URI = os.getenv("MONGODB_URI") or ATLAS_FALLBACK_URI
 client = None
 db = None
 
@@ -84,6 +85,23 @@ class MockCollection:
 class MockDatabase:
     def __init__(self):
         self._cols = {}
+        # Pre-populate doctors collection from bundled JSON so referral network is never empty
+        doc_col = MockCollection("doctors")
+        json_path = os.path.join(os.path.dirname(__file__), "doctors_data.json")
+        if os.path.exists(json_path):
+            try:
+                import json
+                with open(json_path, "r", encoding="utf-8") as f:
+                    docs = json.load(f)
+                    for d in docs:
+                        d_copy = dict(d)
+                        if "_id" not in d_copy:
+                            d_copy["_id"] = ObjectId()
+                        doc_col.data.append(d_copy)
+            except Exception:
+                pass
+        self._cols["doctors"] = doc_col
+
     def __getattr__(self, name):
         if name.startswith("_"):
             raise AttributeError(name)
