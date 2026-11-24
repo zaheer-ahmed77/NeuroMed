@@ -28,11 +28,11 @@ export const AuthProvider = ({ children }) => {
   const [settings, setSettings] = useState({});
   const [isDemoMode, setIsDemoMode] = useState(false);
 
-  // Safety timeout: force loading=false after 5 seconds to prevent infinite spinner
+  // Safety timeout: force loading=false after 2.5 seconds to prevent infinite spinner
   useEffect(() => {
     const safetyTimer = setTimeout(() => {
       setIsLoading(false);
-    }, 5000);
+    }, 2500);
     return () => clearTimeout(safetyTimer);
   }, []);
 
@@ -84,31 +84,28 @@ export const AuthProvider = ({ children }) => {
           };
           setUser(formattedUser);
 
-          // Sync with backend /me and /settings (non-blocking, don't hold loading)
-          if (clerkToken) {
-            try {
-              const res = await fetch(`${API_BASE}/me`, {
-                headers: { 'Authorization': `Bearer ${clerkToken}` }
-              });
-              if (res.ok) {
-                const dbUser = await res.json();
-                if (isMounted) setUser(prev => ({ ...prev, ...dbUser }));
-              }
-            } catch (err) {
-              console.warn('Backend /me sync notice:', err.message);
-            }
+          // Unblock loading immediately so dashboard/app renders without waiting for backend
+          if (isMounted) setIsLoading(false);
 
-            try {
-              const sRes = await fetch(`${API_BASE}/settings`, {
-                headers: { 'Authorization': `Bearer ${clerkToken}` }
-              });
-              if (sRes.ok) {
-                const sData = await sRes.json();
-                if (isMounted) setSettings(sData);
-              }
-            } catch (err) {
-              console.warn('Backend /settings sync notice:', err.message);
-            }
+          // Asynchronous non-blocking background sync with backend /me and /settings
+          if (clerkToken) {
+            fetch(`${API_BASE}/me`, {
+              headers: { 'Authorization': `Bearer ${clerkToken}` }
+            })
+              .then(res => (res.ok ? res.json() : null))
+              .then(dbUser => {
+                if (isMounted && dbUser) setUser(prev => ({ ...prev, ...dbUser }));
+              })
+              .catch(err => console.warn('Backend /me sync notice:', err.message));
+
+            fetch(`${API_BASE}/settings`, {
+              headers: { 'Authorization': `Bearer ${clerkToken}` }
+            })
+              .then(res => (res.ok ? res.json() : null))
+              .then(sData => {
+                if (isMounted && sData) setSettings(sData);
+              })
+              .catch(err => console.warn('Backend /settings sync notice:', err.message));
           }
         } catch (err) {
           console.error('Clerk session token error:', err);

@@ -791,20 +791,9 @@ function LandingPage({ onLogin, navigate }) {
         .floating-anim-delayed { animation: floatAnim 7s ease-in-out infinite 1s; }
         .floating-anim-delayed-more { animation: floatAnim 6.5s ease-in-out infinite 2.5s; }
 
-        @media (max-width: 1400px) {
-          .hero-card-tl, .hero-card-tr, .hero-card-bl, .hero-card-br { transform: scale(0.85); transform-origin: center; }
-        }
-        @media (max-width: 1100px) {
-          .hero-card-tl, .hero-card-tr, .hero-card-bl, .hero-card-br { transform: scale(0.7); opacity: 0.6; pointer-events: none; }
-        }
         @media (max-width: 900px) {
           .lp-desktop-nav { display: none !important; }
           .lp-mobile-btn { display: flex !important; }
-        }
-        @media (max-width: 768px) {
-          .floating-anim, .floating-anim-delayed, .floating-anim-delayed-more {
-            zoom: 0.6;
-          }
         }
         @media (max-width: 640px) {
           .section-label { font-size: 0.72rem; }

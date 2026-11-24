@@ -1,14 +1,14 @@
-from pydantic import BaseModel, EmailStr, Field
+from pydantic import BaseModel, Field
 from typing import Optional, List
 from datetime import datetime
 
 class UserCreate(BaseModel):
     fullName: str
-    email: EmailStr
+    email: str
     password: str
 
 class UserLogin(BaseModel):
-    email: EmailStr
+    email: str
     password: str
 
 class GoogleLoginRequest(BaseModel):
@@ -21,12 +21,12 @@ class Token(BaseModel):
 class UserOut(BaseModel):
     id: str
     fullName: str
-    email: EmailStr
+    email: str
     avatar: Optional[str] = None
 
 class UserUpdate(BaseModel):
     fullName: Optional[str] = None
-    email: Optional[EmailStr] = None
+    email: Optional[str] = None
     password: Optional[str] = None
     avatar: Optional[str] = None
 

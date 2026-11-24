@@ -41,9 +41,10 @@ def generate_pdf_report(analysis_data, output_path):
     Story = []
 
     # Title
-    Story.append(Paragraph("BrainX AI - Analysis Report", title_style))
+    Story.append(Paragraph("NeuroMed AI - Diagnostic Analysis Report", title_style))
     Story.append(Paragraph(f"Analysis ID: {analysis_data['id']}", body_style))
     Story.append(Paragraph(f"Date: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}", body_style))
+    Story.append(Paragraph("Platform: <a href='https://neuromedpk.app' color='#1E40AF'><b>Neuromedpk.app</b></a>", body_style))
     Story.append(Spacer(1, 12))
 
     # Results Table
@@ -118,18 +119,18 @@ def generate_pdf_report(analysis_data, output_path):
     Story.append(Paragraph(exp_text, body_style))
     
     # Disclaimer
-    disclaimer_text = "Important: BrainXAI provides an AI-based preliminary analysis of brain MRI images for informational purposes. It is not a medical diagnosis and should not replace evaluation by a qualified healthcare professional."
+    disclaimer_text = "Important: NeuroMed provides an AI-based preliminary clinical decision support analysis of brain MRI scans for informational and research purposes. It is not an automated medical diagnosis and should always be evaluated alongside clinical correlation by a qualified healthcare professional."
     Story.append(Paragraph(disclaimer_text, disclaimer_style))
     Story.append(Spacer(1, 20))
     
-    # QR Code Generation
+    # QR Code Generation (Points to user's live production web platform)
     qr = qrcode.QRCode(
         version=1,
         error_correction=qrcode.constants.ERROR_CORRECT_L,
         box_size=4,
         border=0,
     )
-    report_link = f"https://neuromed.ai/verify/{analysis_data['id']}"
+    report_link = "https://neuromedpk.app"
     qr.add_data(report_link)
     qr.make(fit=True)
     
@@ -137,9 +138,10 @@ def generate_pdf_report(analysis_data, output_path):
     qr_img = qr.make_image(fill_color="black", back_color="white")
     qr_img.save(qr_img_path)
     
-    Story.append(Paragraph("Scan QR to View & Verify Report Online:", heading_style))
+    Story.append(Paragraph("Scan QR to Access & Verify Report on NeuroMed:", heading_style))
     Story.append(Image(qr_img_path, width=80, height=80, hAlign='LEFT'))
-    Story.append(Paragraph(f"<a href='{report_link}' color='blue'>{report_link}</a>", body_style))
+    Story.append(Spacer(1, 4))
+    Story.append(Paragraph(f"Official Portal: <a href='{report_link}' color='#1E40AF'><b>{report_link}</b></a>", body_style))
 
     doc.build(Story)
     

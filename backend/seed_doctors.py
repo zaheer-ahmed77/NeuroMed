@@ -4,23 +4,35 @@ import os
 from motor.motor_asyncio import AsyncIOMotorClient
 
 async def main():
-    MONGO_URI = None
-    with open(".env", "r") as f:
-        for line in f:
-            if line.startswith("MONGODB_URI"):
-                MONGO_URI = line.split("=", 1)[1].strip()
-                break
-
+    MONGO_URI = os.getenv("MONGODB_URI")
+    
+    # Try local .env files
     if not MONGO_URI:
-        print("Error: MONGODB_URI not found in .env file.")
-        return
+        env_paths = [".env", os.path.join(os.path.dirname(__file__), ".env"), os.path.join(os.path.dirname(__file__), "..", ".env")]
+        for ep in env_paths:
+            if os.path.exists(ep):
+                try:
+                    with open(ep, "r", encoding="utf-8") as f:
+                        for line in f:
+                            if line.strip().startswith("MONGODB_URI="):
+                                MONGO_URI = line.split("=", 1)[1].strip()
+                                break
+                    if MONGO_URI:
+                        break
+                except Exception:
+                    pass
+
+    # Deployment guide fallback URI
+    if not MONGO_URI:
+        MONGO_URI = "mongodb+srv://za5528788_db_user:<REDACTED_PASSWORD>@cluster0.x8nbee8.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0"
 
     print("Connecting to MongoDB Atlas to seed doctors...")
     client = AsyncIOMotorClient(MONGO_URI)
     db = client.get_database("neuromed_db")
     collection = db["doctors"]
 
-    with open("doctors_data.json", "r") as f:
+    json_path = os.path.join(os.path.dirname(__file__), "doctors_data.json")
+    with open(json_path, "r", encoding="utf-8") as f:
         doctors = json.load(f)
 
     # Check if we already have doctors

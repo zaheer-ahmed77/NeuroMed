@@ -32,6 +32,24 @@ class MockCollection:
             def __init__(self, id): self.inserted_id = id
         return _Result(document["_id"])
 
+    async def insert_many(self, documents):
+        ids = []
+        for doc in documents:
+            doc_copy = dict(doc)
+            if "_id" not in doc_copy:
+                doc_copy["_id"] = ObjectId()
+            self.data.append(doc_copy)
+            ids.append(doc_copy["_id"])
+        class _ManyResult:
+            def __init__(self, ids): self.inserted_ids = ids
+        return _ManyResult(ids)
+
+    async def count_documents(self, query=None):
+        if not query:
+            return len(self.data)
+        matches = [i for i in self.data if all(i.get(k) == v for k, v in query.items())]
+        return len(matches)
+
     async def update_one(self, query, update):
         item = await self.find_one(query)
         if item and "$set" in update:

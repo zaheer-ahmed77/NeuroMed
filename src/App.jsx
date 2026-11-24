@@ -7,61 +7,69 @@ import LoadingScreen from './components/LoadingScreen';
 import { AuthProvider, AuthContext } from './context/AuthContext';
 
 function AppContent() {
+  const { token, logout, isLoading } = useContext(AuthContext);
+  const [showLoader, setShowLoader] = useState(false);
+
   const [currentRoute, setCurrentRoute] = useState(() => {
     const hash = window.location.hash.replace('#', '');
     if (hash === 'about' || hash === 'services') return hash;
     return 'home';
   });
-  const [showLoader, setShowLoader] = useState(false);
-  const { token, logout, isLoading } = useContext(AuthContext);
 
+  // Keep route synced with URL hash and auth token
   useEffect(() => {
     const handleHash = () => {
       const hash = window.location.hash.replace('#', '');
-      if (hash === 'about' || hash === 'services') setCurrentRoute(hash);
-      else if (hash === '' || hash === 'home') setCurrentRoute(token ? 'dashboard' : 'home');
-      else setCurrentRoute(token ? 'dashboard' : 'home');
+      if (hash === 'about' || hash === 'services') {
+        setCurrentRoute(hash);
+      } else if (token) {
+        setCurrentRoute('dashboard');
+        if (hash === '' || hash === 'home') {
+          window.location.hash = 'overview';
+        }
+      } else {
+        setCurrentRoute('home');
+      }
     };
+
     window.addEventListener('hashchange', handleHash);
-    handleHash(); // Call once on mount
+    handleHash(); // Evaluate immediately on mount/token change
     return () => window.removeEventListener('hashchange', handleHash);
   }, [token]);
 
+  // Safety watchdog: ensure showLoader NEVER stays stuck
+  useEffect(() => {
+    if (showLoader) {
+      const timer = setTimeout(() => setShowLoader(false), 900);
+      return () => clearTimeout(timer);
+    }
+  }, [showLoader]);
+
   const navigate = (route) => {
-    window.location.hash = route;
+    if (route === 'dashboard') {
+      window.location.hash = 'overview';
+    } else {
+      window.location.hash = route;
+    }
   };
 
-  useEffect(() => {
-    if (token && currentRoute === 'home') {
-      // Show splash for 500ms on refresh when already logged in
-      setShowLoader(true);
-      const t = setTimeout(() => {
-        setShowLoader(false);
-        if (window.location.hash === '' || window.location.hash === '#home') {
-          window.location.hash = 'overview';
-        }
-      }, 500);
-      return () => clearTimeout(t);
-    } else if (!token && currentRoute !== 'home' && currentRoute !== 'about' && currentRoute !== 'services') {
-      setCurrentRoute('home');
-    }
-  }, [token, currentRoute]);
-
   const handleLogin = () => {
-    // Show splash for 800ms after login, then go to dashboard
+    // Smooth transition only when user explicitly logs in through the modal
     setShowLoader(true);
     setTimeout(() => {
       setShowLoader(false);
       setCurrentRoute('dashboard');
       window.location.hash = 'overview';
-    }, 800);
+    }, 600);
   };
 
   const handleLogout = () => {
     logout();
+    setCurrentRoute('home');
     window.location.hash = 'home';
   };
 
+  // Only show splash screen while Auth/Clerk is actually verifying session, or during active login
   if (isLoading || showLoader) {
     return <LoadingScreen message={showLoader && !isLoading ? 'Welcome back' : 'Loading NeuroMed'} />;
   }

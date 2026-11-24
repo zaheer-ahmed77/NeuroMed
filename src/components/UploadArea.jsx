@@ -914,6 +914,9 @@ const UploadArea = ({ onAnalysisComplete }) => {
                 <div style={{ marginTop: 4, fontSize: 11, fontFamily: 'monospace', color: '#94A3B8' }}>
                   Report ID: {Math.random().toString(36).substr(2, 9).toUpperCase()}
                 </div>
+                <div style={{ marginTop: 2, fontSize: 11, color: '#1E40AF', fontWeight: 600 }}>
+                  Neuromedpk.app
+                </div>
               </div>
             </div>
 

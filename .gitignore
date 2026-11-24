@@ -45,3 +45,11 @@ wheels/
 # Databases
 *.db
 *.sqlite3
+
+# Uploads & Temporary Reports
+uploads/
+backend/uploads/
+*.pdf
+
+# IDE & Config
+.vscode/

@@ -2,6 +2,7 @@ from fastapi import FastAPI, File, Form, UploadFile, Depends, HTTPException, sta
 from contextlib import asynccontextmanager
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, FileResponse
+import asyncio
 import uuid
 import json
 from pydantic import BaseModel
@@ -10,10 +11,19 @@ from report import generate_pdf_report
 from fastapi.security import OAuth2PasswordBearer
 from typing import List, Optional
 import uvicorn
-import torch
-import torch.nn as nn
-import torchvision.models as models
-from torchvision import transforms
+try:
+    import torch
+    import torch.nn as nn
+    import torchvision.models as models
+    from torchvision import transforms
+    HAS_TORCH = True
+except Exception as e:
+    print(f"[WARNING] PyTorch not available ({e}). Running server without vision inference.", flush=True)
+    torch = None
+    nn = None
+    models = None
+    transforms = None
+    HAS_TORCH = False
 import numpy as np
 from PIL import Image
 import io
@@ -132,35 +142,73 @@ clinical_model = None
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login", auto_error=False)
 
+def load_bundled_doctors():
+    doctors_path = os.path.join(os.path.dirname(__file__), "doctors_data.json")
+    if os.path.exists(doctors_path):
+        try:
+            with open(doctors_path, "r", encoding="utf-8") as f:
+                return json.load(f)
+        except Exception as e:
+            print(f"Error loading doctors_data.json: {e}", flush=True)
+    return []
+
+async def seed_doctors_if_empty(database):
+    try:
+        count = 0
+        if hasattr(database.doctors, "count_documents"):
+            count = await database.doctors.count_documents({})
+        else:
+            docs = await database.doctors.find({}).to_list(length=1)
+            count = len(docs)
+        if count == 0:
+            bundled = load_bundled_doctors()
+            if bundled:
+                to_insert = [dict(doc) for doc in bundled]
+                await database.doctors.insert_many(to_insert)
+                print(f"[AUTO-SEED] Successfully seeded {len(to_insert)} doctors into database.", flush=True)
+                return True
+        else:
+            print(f"[AUTO-SEED] Database already contains {count} doctors.", flush=True)
+    except Exception as e:
+        print(f"[AUTO-SEED] Warning auto-seeding doctors: {e}", flush=True)
+    return False
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Startup
     global swin_model, device, clinical_model
     print("Starting up...")
     await connect_to_mongo()
+    db = get_database()
+    if db is not None:
+        await seed_doctors_if_empty(db)
     
-    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-    print(f"Using device: {device} for PyTorch Inference")
-    
-    if os.path.exists(MODEL_PATH):
+    if HAS_TORCH:
         try:
-            # Initialize Swin Transformer architecture
-            swin_model = models.swin_t(weights=None)
-            swin_model.head = nn.Sequential(
-                nn.Dropout(p=0.5),
-                nn.Linear(swin_model.head.in_features, len(CLASSES))
-            )
+            device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+            print(f"Using device: {device} for PyTorch Inference", flush=True)
             
-            # Load checkpoint
-            ckpt = torch.load(MODEL_PATH, map_location=device)
-            swin_model.load_state_dict(ckpt, strict=False)
-            swin_model.to(device)
-            swin_model.eval()
-            print(f"Swin Transformer loaded successfully from {MODEL_PATH}")
+            if os.path.exists(MODEL_PATH):
+                # Initialize Swin Transformer architecture
+                swin_model = models.swin_t(weights=None)
+                swin_model.head = nn.Sequential(
+                    nn.Dropout(p=0.5),
+                    nn.Linear(swin_model.head.in_features, len(CLASSES))
+                )
+                
+                # Load checkpoint
+                ckpt = torch.load(MODEL_PATH, map_location=device)
+                swin_model.load_state_dict(ckpt, strict=False)
+                swin_model.to(device)
+                swin_model.eval()
+                print(f"Swin Transformer loaded successfully from {MODEL_PATH}", flush=True)
+            else:
+                print(f"WARNING: Model file {MODEL_PATH} not found.", flush=True)
         except Exception as e:
-            print(f"ERROR loading model: {e}")
+            print(f"ERROR loading model: {e}", flush=True)
+            swin_model = None
     else:
-        print(f"WARNING: Model file {MODEL_PATH} not found.")
+        print("[INFO] PyTorch not available in this environment. Swin-T image inference skipped.", flush=True)
         
     if os.path.exists(CLINICAL_MODEL_PATH):
         try:
@@ -181,7 +229,15 @@ app = FastAPI(lifespan=lifespan)
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=[
+        "https://neuromedpk.app",
+        "https://www.neuromedpk.app",
+        "http://localhost:5173",
+        "http://localhost:5175",
+        "http://127.0.0.1:5173",
+        "http://127.0.0.1:5175",
+    ],
+    allow_origin_regex=r"https://.*\.vercel\.app|https://.*\.app|http://localhost:.*|http://127\.0\.0\.1:.*",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -263,12 +319,36 @@ async def get_nearby_doctors(city: str = None, lat: float = None, lng: float = N
     if city:
         query["city"] = {"$regex": f"^{city}$", "$options": "i"}
         
-    cursor = db.doctors.find(query)
-    doctors = await cursor.to_list(length=100)
+    doctors = []
+    if db is not None:
+        try:
+            cursor = db.doctors.find(query)
+            doctors = await cursor.to_list(length=100)
+        except Exception as e:
+            print(f"Error querying doctors collection: {e}", flush=True)
+            doctors = []
+            
+    # Resilient fallback: if database has 0 doctors, load from bundled doctors_data.json
+    if not doctors:
+        bundled = load_bundled_doctors()
+        if bundled:
+            if db is not None:
+                asyncio.create_task(seed_doctors_if_empty(db))
+            filtered_bundled = []
+            for d in bundled:
+                d_copy = dict(d)
+                if "_id" not in d_copy:
+                    d_copy["_id"] = str(uuid.uuid4())
+                else:
+                    d_copy["_id"] = str(d_copy["_id"])
+                if city and d_copy.get("city", "").strip().lower() != city.strip().lower():
+                    continue
+                filtered_bundled.append(d_copy)
+            doctors = filtered_bundled
     
     result = []
     for d in doctors:
-        d["_id"] = str(d["_id"])
+        d["_id"] = str(d.get("_id", uuid.uuid4()))
         if lat is not None and lng is not None and "latitude" in d and "longitude" in d:
             dist = haversine(lat, lng, d["latitude"], d["longitude"])
             d["distance_km"] = round(dist, 1)
@@ -278,6 +358,22 @@ async def get_nearby_doctors(city: str = None, lat: float = None, lng: float = N
         result.sort(key=lambda x: x.get("distance_km", 9999))
         
     return {"doctors": result}
+
+@app.post("/doctors/seed")
+async def seed_doctors_endpoint():
+    db = get_database()
+    if db is None:
+        raise HTTPException(status_code=500, detail="Database not initialized")
+    bundled = load_bundled_doctors()
+    if not bundled:
+        raise HTTPException(status_code=404, detail="doctors_data.json not found on server")
+    try:
+        await db.doctors.delete_many({})
+        to_insert = [dict(doc) for doc in bundled]
+        await db.doctors.insert_many(to_insert)
+        return {"status": "success", "count": len(to_insert), "message": f"Successfully seeded {len(to_insert)} doctors into database"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 class DoctorRegister(BaseModel):
     name: str
@@ -294,10 +390,60 @@ async def register_doctor(doctor: DoctorRegister, current_user = Depends(get_cur
     doc_dict = doctor.model_dump()
     doc_dict["is_verified"] = False
     doc_dict["user_id"] = str(current_user["_id"])
+    doc_dict["registered_at"] = datetime.utcnow().isoformat()
     
     res = await db.doctors.insert_one(doc_dict)
     doc_dict["_id"] = str(res.inserted_id)
-    return {"message": "Doctor profile created successfully", "doctor": doc_dict}
+    return {"message": "Doctor profile created successfully. Awaiting admin PMDC verification.", "doctor": doc_dict}
+
+@app.get("/doctors/pending")
+async def get_pending_doctors(current_user = Depends(get_current_user)):
+    """Fetch all doctor registration requests awaiting PMDC verification"""
+    db = get_database()
+    if db is None:
+        return {"pending_doctors": [], "count": 0}
+    try:
+        cursor = db.doctors.find({"is_verified": False})
+        pending = await cursor.to_list(length=100)
+        for doc in pending:
+            doc["_id"] = str(doc["_id"])
+        return {"pending_doctors": pending, "count": len(pending)}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.put("/doctors/{doctor_id}/verify")
+async def verify_doctor(doctor_id: str, current_user = Depends(get_current_user)):
+    """Approve/verify a doctor so they appear in the live referral network"""
+    db = get_database()
+    if db is None:
+        raise HTTPException(status_code=500, detail="Database not initialized")
+    from bson import ObjectId
+    try:
+        query = {"_id": ObjectId(doctor_id)}
+    except Exception:
+        query = {"_id": doctor_id}
+        
+    result = await db.doctors.update_one(query, {"$set": {"is_verified": True}})
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Doctor registration not found")
+    return {"message": "Doctor successfully verified! Now visible in referral network.", "doctor_id": doctor_id}
+
+@app.delete("/doctors/{doctor_id}")
+async def reject_doctor(doctor_id: str, current_user = Depends(get_current_user)):
+    """Reject or delete a doctor profile"""
+    db = get_database()
+    if db is None:
+        raise HTTPException(status_code=500, detail="Database not initialized")
+    from bson import ObjectId
+    try:
+        query = {"_id": ObjectId(doctor_id)}
+    except Exception:
+        query = {"_id": doctor_id}
+        
+    result = await db.doctors.delete_one(query)
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Doctor not found")
+    return {"message": "Doctor registration removed successfully", "doctor_id": doctor_id}
 
 @app.get("/me", response_model=UserOut)
 async def read_users_me(current_user: dict = Depends(get_current_user)):
@@ -400,6 +546,8 @@ async def clear_history(current_user: dict = Depends(get_current_user)):
 
 # --- PREDICTION ROUTE ---
 def preprocess_image(image_bytes):
+    if not HAS_TORCH or transforms is None:
+        return None
     img = Image.open(io.BytesIO(image_bytes)).convert("RGB")
     
     preprocess = transforms.Compose([
@@ -417,8 +565,8 @@ async def predict(file: UploadFile = File(...), authorization: Optional[str] = H
     global swin_model, device
     print(f"[DEBUG] /predict called | patient_name={repr(patient_name)} | file={file.filename}")
     
-    if swin_model is None:
-        return JSONResponse(status_code=503, content={"error": "Model not loaded."})
+    if swin_model is None or not HAS_TORCH:
+        return JSONResponse(status_code=503, content={"error": "Vision model not loaded or PyTorch unavailable."})
 
     try:
         contents = await file.read()

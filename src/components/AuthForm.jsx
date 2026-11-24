@@ -1,6 +1,7 @@
 import React, { useState, useContext } from 'react';
-import { Mail, Lock, User, Eye, EyeOff, Loader2, AlertCircle, CheckCircle2, Zap, Shield, Brain, Activity, KeyRound } from 'lucide-react';
-import { useSignIn, useSignUp, useClerk } from '@clerk/react';
+import { Mail, Lock, User, Eye, EyeOff, Loader2, AlertCircle, CheckCircle2, Zap, Shield, Brain, Activity, KeyRound, ArrowLeft } from 'lucide-react';
+import { useClerk } from '@clerk/react';
+import { useSignIn, useSignUp } from '@clerk/react/legacy';
 import { AuthContext } from '../context/AuthContext';
 
 /* ── NeuroMed Logo ── */
@@ -32,6 +33,15 @@ const AuthForm = ({ onLogin }) => {
   const [pendingVerification, setPendingVerification] = useState(false);
   const [verificationCode, setVerificationCode] = useState('');
 
+  // Password Reset / Forgot Password state
+  const [isResetting, setIsResetting] = useState(false);
+  const [resetStep, setResetStep] = useState('request'); // 'request' | 'code'
+  const [resetCode, setResetCode] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmNewPassword, setConfirmNewPassword] = useState('');
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+
   const clerk = useClerk();
   const { isLoaded: isSignInLoaded, signIn, setActive: setActiveSignIn } = useSignIn();
   const { isLoaded: isSignUpLoaded, signUp, setActive: setActiveSignUp } = useSignUp();
@@ -46,6 +56,220 @@ const AuthForm = ({ onLogin }) => {
     setPassword('');
     setPendingVerification(false);
     setVerificationCode('');
+    setIsResetting(false);
+    setResetStep('request');
+    setResetCode('');
+    setNewPassword('');
+    setConfirmNewPassword('');
+  };
+
+  const cancelReset = () => {
+    setIsResetting(false);
+    setResetStep('request');
+    setResetCode('');
+    setNewPassword('');
+    setConfirmNewPassword('');
+    setError(null);
+    setSuccess(null);
+  };
+
+  const handleStartForgotPassword = () => {
+    setError(null);
+    setSuccess(null);
+    setIsResetting(true);
+    if (email.trim()) {
+      handleSendResetCode(email.trim());
+    } else {
+      setResetStep('request');
+    }
+  };
+
+  const handleSendResetCode = async (targetEmail = email, isResend = false) => {
+    const cleanEmail = (targetEmail || '').trim();
+    if (!cleanEmail) {
+      setError('Please enter your email address to receive the verification code.');
+      return;
+    }
+    setError(null);
+    setSuccess(null);
+    setIsLoading(true);
+
+    try {
+      const targetSignIn = (typeof clerk.client?.signIn?.create === 'function' ? clerk.client.signIn : null)
+        || (typeof signIn?.create === 'function' ? signIn : null)
+        || (typeof window.Clerk?.client?.signIn?.create === 'function' ? window.Clerk.client.signIn : null)
+        || clerk.client?.signIn
+        || signIn;
+
+      if (!targetSignIn) {
+        throw new Error('Authentication service is still initializing. Please wait a moment.');
+      }
+
+      // Check modern future API first
+      if (typeof targetSignIn?.resetPasswordEmailCode?.sendCode === 'function') {
+        if (!targetSignIn.status || targetSignIn.status === 'needs_identifier') {
+          await targetSignIn.create({ identifier: cleanEmail });
+        }
+        const { error: sendErr } = await targetSignIn.resetPasswordEmailCode.sendCode();
+        if (sendErr) {
+          const msg = sendErr.errors?.[0]?.longMessage || sendErr.errors?.[0]?.message || sendErr.message || 'Failed to send reset code.';
+          setError(msg);
+          return;
+        }
+        setEmail(cleanEmail);
+        setIsResetting(true);
+        setResetStep('code');
+        setSuccess(`A 6-digit verification code has been sent to ${cleanEmail}`);
+        return;
+      }
+
+      // If resending and factor is already prepared on this sign-in attempt
+      if (isResend && targetSignIn.status === 'needs_first_factor' && targetSignIn.supportedFirstFactors) {
+        const factor = targetSignIn.supportedFirstFactors.find(
+          f => f.strategy === 'reset_password_email_code'
+        );
+        if (factor && typeof targetSignIn.prepareFirstFactor === 'function') {
+          await targetSignIn.prepareFirstFactor({
+            strategy: 'reset_password_email_code',
+            emailAddressId: factor.emailAddressId,
+          });
+          setSuccess(`A new 6-digit verification code has been sent to ${cleanEmail}`);
+          setIsResetting(true);
+          setResetStep('code');
+          return;
+        }
+      }
+
+      await targetSignIn.create({
+        strategy: 'reset_password_email_code',
+        identifier: cleanEmail,
+      });
+
+      setEmail(cleanEmail);
+      setIsResetting(true);
+      setResetStep('code');
+      setSuccess(`A 6-digit verification code has been sent to ${cleanEmail}`);
+    } catch (err) {
+      console.error('Password reset send code error:', err);
+      const msg = err.errors?.[0]?.longMessage || err.errors?.[0]?.message || err.message || 'Failed to send reset code.';
+      setError(msg);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleResetPassword = async (e) => {
+    e.preventDefault();
+    const cleanCode = resetCode.trim();
+    if (!cleanCode) {
+      setError('Please enter the 6-digit code sent to your email.');
+      return;
+    }
+    if (cleanCode.length !== 6) {
+      setError('The verification code must be exactly 6 digits.');
+      return;
+    }
+    if (!newPassword) {
+      setError('Please enter your new password.');
+      return;
+    }
+    if (newPassword.length < 8) {
+      setError('Password must be at least 8 characters long.');
+      return;
+    }
+    if (newPassword !== confirmNewPassword) {
+      setError('Passwords do not match. Please verify both passwords match.');
+      return;
+    }
+
+    setError(null);
+    setSuccess(null);
+    setIsLoading(true);
+
+    try {
+      const targetSignIn = (typeof clerk.client?.signIn?.attemptFirstFactor === 'function' ? clerk.client.signIn : null)
+        || (typeof signIn?.attemptFirstFactor === 'function' ? signIn : null)
+        || (typeof window.Clerk?.client?.signIn?.attemptFirstFactor === 'function' ? window.Clerk.client.signIn : null)
+        || clerk.client?.signIn
+        || signIn;
+
+      const activeSetActive = clerk.setActive || setActiveSignIn || (window.Clerk?.setActive ? window.Clerk.setActive.bind(window.Clerk) : null);
+
+      if (!targetSignIn) {
+        throw new Error('Authentication service is still initializing. Please wait a moment.');
+      }
+
+      // Check modern future API first
+      if (typeof targetSignIn?.resetPasswordEmailCode?.verifyCode === 'function') {
+        const { error: vErr } = await targetSignIn.resetPasswordEmailCode.verifyCode({ code: cleanCode });
+        if (vErr) {
+          const msg = vErr.errors?.[0]?.longMessage || vErr.errors?.[0]?.message || vErr.message || 'Invalid verification code.';
+          setError(msg);
+          return;
+        }
+
+        const { error: pErr } = await targetSignIn.resetPasswordEmailCode.submitPassword({ password: newPassword });
+        if (pErr) {
+          const msg = pErr.errors?.[0]?.longMessage || pErr.errors?.[0]?.message || pErr.message || 'Failed to set password.';
+          setError(msg);
+          return;
+        }
+
+        setSuccess('Password reset successfully! Logging you in...');
+        setTimeout(() => {
+          if (onLogin) onLogin();
+        }, 600);
+        return;
+      }
+
+      // Classic / Legacy API with attemptFirstFactor
+      if (typeof targetSignIn.attemptFirstFactor !== 'function') {
+        throw new Error('Password reset function is not available on this client.');
+      }
+
+      let result;
+      // 1. Attempt first factor verification
+      try {
+        result = await targetSignIn.attemptFirstFactor({
+          strategy: 'reset_password_email_code',
+          code: cleanCode,
+          password: newPassword,
+        });
+      } catch (firstErr) {
+        console.warn('Attempt with password threw error, retrying code-only verification:', firstErr);
+        result = await targetSignIn.attemptFirstFactor({
+          strategy: 'reset_password_email_code',
+          code: cleanCode,
+        });
+      }
+
+      // 2. If status is needs_new_password, call resetPassword to finalize password update!
+      if (result && result.status === 'needs_new_password' && typeof targetSignIn.resetPassword === 'function') {
+        result = await targetSignIn.resetPassword({
+          password: newPassword,
+        });
+      }
+
+      if (result && result.status === 'complete') {
+        if (activeSetActive && result.createdSessionId) {
+          await activeSetActive({ session: result.createdSessionId });
+        }
+        setSuccess('Password reset successfully! Logging you in...');
+        setTimeout(() => {
+          if (onLogin) onLogin();
+        }, 600);
+      } else {
+        const status = result?.status || 'unknown';
+        console.warn('Reset result incomplete status:', status, result);
+        setError(`Password reset could not complete (status: ${status}). Please verify the code or try again.`);
+      }
+    } catch (err) {
+      console.error('Reset error:', err);
+      const msg = err.errors?.[0]?.longMessage || err.errors?.[0]?.message || err.message || 'Failed to reset password. Please check the code.';
+      setError(msg);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleSubmit = async (e) => {
@@ -192,30 +416,6 @@ const AuthForm = ({ onLogin }) => {
     }
   };
 
-  const handleForgotPassword = async () => {
-    if (!email.trim()) {
-      setError('Please enter your Email Address above first, then click Forgot Password.');
-      return;
-    }
-    setIsLoading(true);
-    setError(null);
-    try {
-      const activeSignIn = signIn || clerk.client?.signIn;
-      if (!activeSignIn) return;
-
-      await activeSignIn.create({
-        strategy: 'reset_password_email_code',
-        identifier: email.trim(),
-      });
-      setSuccess(`Password reset instructions sent to ${email.trim()}.`);
-    } catch (err) {
-      const msg = err.errors?.[0]?.longMessage || err.errors?.[0]?.message || 'Failed to send password reset.';
-      setError(msg);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
   /* ── Input helper ── */
   const inputStyle = {
     width: '100%', padding: '13px 13px 13px 44px', boxSizing: 'border-box',
@@ -279,14 +479,20 @@ const AuthForm = ({ onLogin }) => {
               <span style={{ fontSize: '1.4rem', fontWeight: 800, color: '#111827', letterSpacing: '-0.3px' }}>NeuroMed</span>
             </div>
 
-            <h1 style={{ fontSize: '3rem', fontWeight: 900, lineHeight: 1.1, letterSpacing: '-1px', color: '#111827', marginBottom: 8 }}>
+            <h1 style={{
+              fontSize: '3.2rem', fontWeight: 900, lineHeight: 1.05,
+              letterSpacing: '-1.5px', color: '#111827', margin: '0 0 6px 0'
+            }}>
               Clinical-grade AI
             </h1>
-            <h1 style={{ fontSize: '3rem', fontWeight: 900, lineHeight: 1.1, letterSpacing: '-1px', color: '#9CA3AF', marginBottom: 40 }}>
+            <h1 style={{
+              fontSize: '3.2rem', fontWeight: 900, lineHeight: 1.05,
+              letterSpacing: '-1.5px', color: '#9CA3AF', margin: '0 0 36px 0'
+            }}>
               for brain tumors.
             </h1>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
               <TrustItem Icon={Brain} iconBg="rgba(30,64,175,0.08)" iconColor="#1E40AF" text="98.6% tumor detection accuracy" />
               <TrustItem Icon={Shield} iconBg="rgba(16,185,129,0.08)" iconColor="#10B981" text="HIPAA-compliant data security" />
               <TrustItem Icon={Activity} iconBg="rgba(124,58,237,0.08)" iconColor="#7C3AED" text="Explainable AI with Grad-CAM" />
@@ -299,8 +505,10 @@ const AuthForm = ({ onLogin }) => {
             RIGHT PANEL — Exact Card Design
         ═══════════════════════════════════ */}
         <div className="auth-right-panel" style={{
+          flex: '0 0 520px',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
-          position: 'relative', zIndex: 10
+          position: 'relative', zIndex: 10,
+          padding: 40
         }}>
           <div style={{ 
             width: '100%', maxWidth: 440, background: '#FFFFFF', 
@@ -308,7 +516,7 @@ const AuthForm = ({ onLogin }) => {
             overflow: 'hidden', display: 'flex', flexDirection: 'column'
           }}>
             
-            <div className="auth-card-inner">
+            <div className="auth-card-inner" style={{ padding: '36px 40px 20px 40px' }}>
               {/* Mobile Logo */}
               <div className="auth-mobile-logo" style={{ display: 'none', justifyContent: 'center', marginBottom: 32 }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
@@ -317,36 +525,58 @@ const AuthForm = ({ onLogin }) => {
                 </div>
               </div>
 
-              {/* Tab Switcher */}
-              <div style={{ display: 'flex', background: '#F3F4F6', borderRadius: 14, padding: 4, marginBottom: 32 }}>
-                {['Sign In', 'Register'].map((label, i) => {
-                  const active = i === 0 ? isLogin : !isLogin;
-                  return (
-                    <button key={label} type="button" onClick={() => handleTabSwitch(i === 0)}
-                      style={{
-                        flex: 1, padding: '11px', border: 'none', borderRadius: 11,
-                        background: active ? '#fff' : 'transparent',
-                        color: active ? '#111827' : '#9CA3AF',
-                        fontWeight: active ? 700 : 500, fontSize: '0.9rem',
-                        boxShadow: active ? '0 2px 8px rgba(0,0,0,0.06)' : 'none',
-                        cursor: 'pointer', transition: 'all 0.2s',
-                        fontFamily: "'Inter', sans-serif"
-                      }}>{label}</button>
-                  );
-                })}
-              </div>
+              {/* Tab Switcher OR Reset Back Header */}
+              {isResetting ? (
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24, padding: '4px 0' }}>
+                  <button type="button" onClick={cancelReset}
+                    style={{ background: 'none', border: 'none', color: '#1E40AF', fontSize: '0.85rem', fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6, padding: 0 }}>
+                    <ArrowLeft size={16} /> Back to Sign In
+                  </button>
+                  <span style={{ fontSize: '0.78rem', color: '#6B7280', fontWeight: 600 }}>Password Recovery</span>
+                </div>
+              ) : (
+                <div style={{ display: 'flex', background: '#F3F4F6', borderRadius: 14, padding: 4, marginBottom: 28 }}>
+                  {['Sign In', 'Register'].map((label, i) => {
+                    const active = i === 0 ? isLogin : !isLogin;
+                    return (
+                      <button key={label} type="button" onClick={() => handleTabSwitch(i === 0)}
+                        style={{
+                          flex: 1, padding: '11px', border: 'none', borderRadius: 11,
+                          background: active ? '#fff' : 'transparent',
+                          color: active ? '#111827' : '#9CA3AF',
+                          fontWeight: active ? 700 : 500, fontSize: '0.9rem',
+                          boxShadow: active ? '0 2px 8px rgba(0,0,0,0.06)' : 'none',
+                          cursor: 'pointer', transition: 'all 0.2s',
+                          fontFamily: "'Inter', sans-serif"
+                        }}>{label}</button>
+                    );
+                  })}
+                </div>
+              )}
 
-              {/* Header */}
-              <div style={{ marginBottom: 32, textAlign: 'center' }}>
-                <h2 style={{ fontSize: '1.6rem', fontWeight: 800, color: '#111827', letterSpacing: '-0.5px', marginBottom: 8 }}>
-                  {pendingVerification ? 'Verify Email' : (isLogin ? 'Welcome back' : 'Create account')}
+              {/* Header Title & Subtitle */}
+              <div style={{ marginBottom: 24, textAlign: 'center' }}>
+                <h2 style={{ fontSize: '1.5rem', fontWeight: 800, color: '#111827', letterSpacing: '-0.5px', marginBottom: 8 }}>
+                  {isResetting ? (resetStep === 'code' ? 'Enter 6-Digit Code' : 'Forgot Password') : (pendingVerification ? 'Verify Email' : (isLogin ? 'Welcome back' : 'Create account'))}
                 </h2>
-                <p style={{ color: '#475569', fontSize: '0.9rem', fontWeight: 500 }}>
-                  {pendingVerification ? 'Please enter the 6-digit code sent to your email.' : (isLogin ? 'Sign in to access your clinical dashboard.' : 'Register to start using NeuroMed.')}
+                <p style={{ color: '#475569', fontSize: '0.88rem', fontWeight: 500, lineHeight: 1.5 }}>
+                  {isResetting ? (
+                    resetStep === 'code' ? (
+                      <>Enter the <strong>6-digit code</strong> sent to <strong>{email}</strong> and set your new password.</>
+                    ) : (
+                      'Enter your registered email address and we will send you a 6-digit verification code.'
+                    )
+                  ) : pendingVerification ? (
+                    'Please enter the 6-digit code sent to your email.'
+                  ) : isLogin ? (
+                    'Sign in to access your clinical dashboard.'
+                  ) : (
+                    'Register to start using NeuroMed.'
+                  )}
                 </p>
               </div>
 
-              {/* Error / Success */}
+              {/* Error / Success Notifications */}
               {error && (
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '12px 16px', background: '#FEF2F2', border: '1px solid #FECACA', borderRadius: 12, marginBottom: 20, fontSize: '0.85rem', color: '#DC2626', fontWeight: 600 }}>
                   <AlertCircle size={16} style={{ flexShrink: 0 }} /> <span>{error}</span>
@@ -358,14 +588,119 @@ const AuthForm = ({ onLogin }) => {
                 </div>
               )}
 
-              {/* Verification Form (if pending email code) */}
-              {pendingVerification ? (
+              {/* ──────────────────────────────────────────
+                  1) PASSWORD RESET FLOW
+              ────────────────────────────────────────── */}
+              {isResetting ? (
+                resetStep === 'request' ? (
+                  <form onSubmit={(e) => { e.preventDefault(); handleSendResetCode(email); }} style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
+                    <div>
+                      <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 600, color: '#374151', marginBottom: 7 }}>Email Address</label>
+                      <div style={{ position: 'relative' }}>
+                        <Mail size={17} color="#9CA3AF" style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)' }} />
+                        <input type="email" required value={email} onChange={e => setEmail(e.target.value)}
+                          placeholder="name@hospital.com" style={inputStyle} onFocus={handleFocus} onBlur={handleBlur} />
+                      </div>
+                    </div>
+
+                    <button type="submit" disabled={isLoading}
+                      style={{
+                        width: '100%', padding: '14px', border: 'none', borderRadius: 14,
+                        background: '#1E40AF', color: '#fff', fontSize: '0.95rem', fontWeight: 700,
+                        cursor: isLoading ? 'wait' : 'pointer', display: 'flex', alignItems: 'center',
+                        justifyContent: 'center', gap: 8, marginTop: 4,
+                        boxShadow: '0 4px 16px rgba(30,64,175,0.30)', transition: 'all 0.2s',
+                        fontFamily: "'Inter', sans-serif", opacity: isLoading ? 0.7 : 1
+                      }}>
+                      {isLoading ? <Loader2 size={18} className="animate-spin" /> : 'Send 6-Digit Code'}
+                    </button>
+
+                    <div style={{ textAlign: 'center', marginTop: 10 }}>
+                      <button type="button" onClick={cancelReset}
+                        style={{ background: 'none', border: 'none', color: '#475569', fontSize: '0.82rem', fontWeight: 600, cursor: 'pointer' }}>
+                        ← Cancel and Back to Sign In
+                      </button>
+                    </div>
+                  </form>
+                ) : (
+                  /* Step 2: Code + New Password */
+                  <form onSubmit={handleResetPassword} style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
+                    <div>
+                      <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 600, color: '#374151', marginBottom: 7 }}>
+                        6-Digit Verification Code
+                      </label>
+                      <div style={{ position: 'relative' }}>
+                        <KeyRound size={17} color="#1E40AF" style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)' }} />
+                        <input type="text" inputMode="numeric" maxLength={6} required value={resetCode}
+                          onChange={e => setResetCode(e.target.value.replace(/\D/g, ''))}
+                          placeholder="123456"
+                          style={{ ...inputStyle, letterSpacing: '4px', fontSize: '1.1rem', fontWeight: 700, color: '#1E40AF' }}
+                          onFocus={handleFocus} onBlur={handleBlur} />
+                      </div>
+                    </div>
+
+                    <div>
+                      <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 600, color: '#374151', marginBottom: 7 }}>New Password</label>
+                      <div style={{ position: 'relative' }}>
+                        <Lock size={17} color="#9CA3AF" style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)' }} />
+                        <input type={showNewPassword ? 'text' : 'password'} required minLength={8} value={newPassword}
+                          onChange={e => setNewPassword(e.target.value)} placeholder="Minimum 8 characters"
+                          style={{ ...inputStyle, paddingRight: 44 }} onFocus={handleFocus} onBlur={handleBlur} />
+                        <button type="button" onClick={() => setShowNewPassword(p => !p)}
+                          style={{ position: 'absolute', right: 14, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', color: '#9CA3AF', cursor: 'pointer', padding: 0 }}>
+                          {showNewPassword ? <EyeOff size={17} /> : <Eye size={17} />}
+                        </button>
+                      </div>
+                    </div>
+
+                    <div>
+                      <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 600, color: '#374151', marginBottom: 7 }}>Confirm New Password</label>
+                      <div style={{ position: 'relative' }}>
+                        <Lock size={17} color="#9CA3AF" style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)' }} />
+                        <input type={showConfirmPassword ? 'text' : 'password'} required minLength={8} value={confirmNewPassword}
+                          onChange={e => setConfirmNewPassword(e.target.value)} placeholder="Re-enter new password"
+                          style={{ ...inputStyle, paddingRight: 44 }} onFocus={handleFocus} onBlur={handleBlur} />
+                        <button type="button" onClick={() => setShowConfirmPassword(p => !p)}
+                          style={{ position: 'absolute', right: 14, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', color: '#9CA3AF', cursor: 'pointer', padding: 0 }}>
+                          {showConfirmPassword ? <EyeOff size={17} /> : <Eye size={17} />}
+                        </button>
+                      </div>
+                    </div>
+
+                    <button type="submit" disabled={isLoading}
+                      style={{
+                        width: '100%', padding: '14px', border: 'none', borderRadius: 14,
+                        background: '#1E40AF', color: '#fff', fontSize: '0.95rem', fontWeight: 700,
+                        cursor: isLoading ? 'wait' : 'pointer', display: 'flex', alignItems: 'center',
+                        justifyContent: 'center', gap: 8, marginTop: 4,
+                        boxShadow: '0 4px 16px rgba(30,64,175,0.30)', transition: 'all 0.2s',
+                        fontFamily: "'Inter', sans-serif", opacity: isLoading ? 0.7 : 1
+                      }}>
+                      {isLoading ? <Loader2 size={18} className="animate-spin" /> : 'Reset Password & Sign In'}
+                    </button>
+
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 8 }}>
+                      <button type="button" onClick={() => handleSendResetCode(email, true)}
+                        style={{ background: 'none', border: 'none', color: '#1E40AF', fontSize: '0.8rem', fontWeight: 600, cursor: 'pointer' }}>
+                        Resend Code
+                      </button>
+                      <button type="button" onClick={cancelReset}
+                        style={{ background: 'none', border: 'none', color: '#6B7280', fontSize: '0.8rem', fontWeight: 600, cursor: 'pointer' }}>
+                        ← Back to Sign In
+                      </button>
+                    </div>
+                  </form>
+                )
+              ) : pendingVerification ? (
+                /* ──────────────────────────────────────────
+                    2) EMAIL SIGNUP VERIFICATION
+                ────────────────────────────────────────── */
                 <form onSubmit={handleVerifyCode} style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
                   <div>
                     <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 600, color: '#374151', marginBottom: 7 }}>Verification Code</label>
                     <div style={{ position: 'relative' }}>
                       <KeyRound size={17} color="#9CA3AF" style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)' }} />
-                      <input type="text" required value={verificationCode} onChange={e => setVerificationCode(e.target.value)}
+                      <input type="text" inputMode="numeric" maxLength={6} required value={verificationCode} onChange={e => setVerificationCode(e.target.value)}
                         placeholder="123456" style={inputStyle} onFocus={handleFocus} onBlur={handleBlur} />
                     </div>
                   </div>
@@ -390,7 +725,9 @@ const AuthForm = ({ onLogin }) => {
                   </div>
                 </form>
               ) : (
-                /* Normal Form */
+                /* ──────────────────────────────────────────
+                    3) NORMAL SIGN IN / REGISTER FORM
+                ────────────────────────────────────────── */
                 <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
                   {!isLogin && (
                     <div>
@@ -424,7 +761,7 @@ const AuthForm = ({ onLogin }) => {
                     </div>
                     {isLogin && (
                       <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 8 }}>
-                        <span onClick={handleForgotPassword} style={{ fontSize: '0.75rem', fontWeight: 600, color: '#1E40AF', cursor: 'pointer' }}>Forgot Password?</span>
+                        <span onClick={handleStartForgotPassword} style={{ fontSize: '0.78rem', fontWeight: 600, color: '#1E40AF', cursor: 'pointer' }}>Forgot Password?</span>
                       </div>
                     )}
                   </div>
@@ -443,11 +780,9 @@ const AuthForm = ({ onLogin }) => {
                 </form>
               )}
 
-
-
-              {/* Demo mode */}
-              {isLogin && !pendingVerification && (
-                <div style={{ marginTop: 24, textAlign: 'center' }}>
+              {/* Demo mode link */}
+              {isLogin && !pendingVerification && !isResetting && (
+                <div style={{ marginTop: 22, textAlign: 'center' }}>
                   <button type="button" onClick={() => { loginDemo(); if (onLogin) onLogin(); }}
                     style={{ background: 'none', border: 'none', color: '#475569', fontSize: '0.85rem', fontWeight: 500, cursor: 'pointer', textDecoration: 'underline', fontFamily: "'Inter', sans-serif" }}>
                     Access Demo Mode (No Login Required)
@@ -457,7 +792,7 @@ const AuthForm = ({ onLogin }) => {
             </div>
             
             {/* Footer inside card */}
-            <div style={{ background: '#F9FAFB', borderTop: '1px solid #F3F4F6', padding: '16px 24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div style={{ background: '#F9FAFB', borderTop: '1px solid #F3F4F6', padding: '14px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 8 }}>
               {[['🔒', 'HIPAA Compliant'], ['🧠', '98.6% Accurate'], ['⚡', 'Real-Time AI']].map(([emoji, text]) => (
                 <div key={text} style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: '0.68rem', color: '#6B7280', fontWeight: 600 }}>
                   <span>{emoji}</span> {text}
